@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"errors"
 	"log"
 	"owid"
 	"swift"
@@ -48,26 +49,16 @@ func newServices(settingsFile string) *services {
 
 	// Use the file provided to get the OWID settings.
 	owidConfig := owid.NewConfig(settingsFile)
+	err = owidConfig.Validate()
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Link to the SWIFT Azure storage if provided.
-	if swiftConfig.AzureAccount != "" && swiftConfig.AzureAccessKey != "" {
-		swiftStore, err = swift.NewAzure(
-			swiftConfig.AzureAccount,
-			swiftConfig.AzureAccessKey)
-		if err != nil {
-			panic(err)
-		}
-	}
-
+	swiftStore = configreSwiftStore(swiftConfig)
 	// Link to the OWID Azure storage if provided.
-	if owidConfig.AzureAccount != "" && owidConfig.AzureAccessKey != "" {
-		owidStore, err = owid.NewAzure(
-			owidConfig.AzureAccount,
-			owidConfig.AzureAccessKey)
-		if err != nil {
-			panic(err)
-		}
-	}
+	owidStore = configureOwidStore(owidConfig)
 
 	// Get the default browser detector.
 	b, err := swift.NewBrowserRegexes()
@@ -94,4 +85,54 @@ func newServices(settingsFile string) *services {
 		owid.NewServices(owidConfig, owidStore),
 		owidStore,
 		an}
+}
+
+func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
+	var swiftStore swift.Store
+	var err error
+
+	if swiftConfig.AzureAccount != "" && swiftConfig.AzureAccessKey != "" {
+		swiftStore, err = swift.NewAzure(
+			swiftConfig.AzureAccount,
+			swiftConfig.AzureAccessKey)
+		if err != nil {
+			panic(err)
+		}
+	} else if swiftConfig.UseDynamoDB {
+		swiftStore, err = swift.NewAWS(swiftConfig.AWSRegion)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if swiftStore == nil {
+		panic(errors.New("owid store not configured"))
+	}
+
+	return swiftStore
+}
+
+func configureOwidStore(owidConfig owid.Configuration) owid.Store {
+	var owidStore owid.Store
+	var err error
+
+	if owidConfig.AzureAccount != "" && owidConfig.AzureAccessKey != "" {
+		owidStore, err = owid.NewAzure(
+			owidConfig.AzureAccount,
+			owidConfig.AzureAccessKey)
+		if err != nil {
+			panic(err)
+		}
+	} else if owidConfig.UseDynamoDB {
+		owidStore, err = owid.NewAWS(owidConfig.AWSRegion)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if owidStore == nil {
+		panic(errors.New("owid store not configured"))
+	}
+
+	return owidStore
 }
