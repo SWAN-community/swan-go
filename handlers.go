@@ -28,10 +28,11 @@ import (
 // provided.
 func AddHandlers(
 	settingsFile string,
+	access swift.Access,
 	malformedHandler func(w http.ResponseWriter, r *http.Request)) {
 
 	// Create the new set of services.
-	s := newServices(settingsFile)
+	s := newServices(settingsFile, access)
 
 	// Add the SWIFT handlers.
 	swift.AddHandlers(s.swift, malformedHandler)

@@ -35,7 +35,7 @@ type services struct {
 // NewServices a set of services to use with SWIFT. These provide defaults via
 // the configuration parameter, and access to persistent storage via the store
 // parameter.
-func newServices(settingsFile string) *services {
+func newServices(settingsFile string, access swift.Access) *services {
 	var swiftStore swift.Store
 	var owidStore owid.Store
 
@@ -81,7 +81,7 @@ func newServices(settingsFile string) *services {
 	// Return the services.
 	return &services{
 		c,
-		swift.NewServices(swiftConfig, swiftStore, b),
+		swift.NewServices(swiftConfig, swiftStore, access, b),
 		owid.NewServices(owidConfig, owidStore),
 		owidStore,
 		an}
