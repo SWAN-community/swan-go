@@ -32,10 +32,13 @@ type services struct {
 	accessNode string          // The access node for the SWAN network
 }
 
-// NewServices a set of services to use with SWIFT. These provide defaults via
+// newServices a set of services to use with SWIFT. These provide defaults via
 // the configuration parameter, and access to persistent storage via the store
 // parameter.
-func newServices(settingsFile string, access swift.Access) *services {
+func newServices(
+	settingsFile string,
+	swiftAccess swift.Access,
+	owidAccess owid.Access) *services {
 	var swiftStore swift.Store
 	var owidStore owid.Store
 
@@ -81,8 +84,8 @@ func newServices(settingsFile string, access swift.Access) *services {
 	// Return the services.
 	return &services{
 		c,
-		swift.NewServices(swiftConfig, swiftStore, access, b),
-		owid.NewServices(owidConfig, owidStore),
+		swift.NewServices(swiftConfig, swiftStore, swiftAccess, b),
+		owid.NewServices(owidConfig, owidStore, owidAccess),
 		owidStore,
 		an}
 }
