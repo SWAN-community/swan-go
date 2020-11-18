@@ -16,6 +16,12 @@
 
 package swan
 
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/gob"
+)
+
 // OfferID (aka Transaction ID or Bid ID) contains the information about the
 // opportunity to advertise with a publisher. It is created by the SWAN host
 // as an OWID and as such is signed by the SWAN host and not the publisher.
@@ -29,15 +35,43 @@ type OfferID struct {
 
 // NewOfferID creates a new OfferID instance from the string provided. The string
 func NewOfferID(s string) (*OfferID, error) {
+	var o OfferID
 
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := bytes.NewBuffer(b)
+	dec := gob.NewDecoder(buf)
+	err = dec.Decode(&o)
+	if err != nil {
+		return nil, err
+	}
+
+	return &o, nil
 }
 
 // AsByteArray returns the OfferID as a byte array.
-func (o *OfferID) AsByteArray() string {
+func (o *OfferID) AsByteArray() ([]byte, error) {
+	var buf bytes.Buffer
 
+	enc := gob.NewEncoder(&buf)
+
+	err := enc.Encode(o)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // AsString returns the OfferID as a base 64 encoded string.
-func (o *OfferID) AsString() string {
+func (o *OfferID) AsString() (string, error) {
+	b, err := o.AsByteArray()
+	if err != nil {
+		return "", err
+	}
 
+	return base64.StdEncoding.EncodeToString(b), nil
 }

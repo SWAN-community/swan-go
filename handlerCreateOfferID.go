@@ -16,15 +16,69 @@
 
 package swan
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
 // Take the incoming parameters that map to the OfferID structure to create the
 // OfferID. Then turn the OfferID into a byte array to be used as the payload
 // for the OWID that is returned as a string.
 func handlerCreateOfferID(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		//check for error
+		err := r.ParseForm()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			return
+		}
 
+		pl := r.FormValue("placement")
+		if pl == "" {
+			returnAPIError(&s.config, w, errors.New("missing placement paramter"), http.StatusBadRequest)
+			return
+		}
+		pu := r.FormValue("pubdomain")
+		if pu == "" {
+			returnAPIError(&s.config, w, errors.New("missing pubdomain paramter"), http.StatusBadRequest)
+			return
+		}
+		c := r.FormValue("cbid")
+		if c == "" {
+			returnAPIError(&s.config, w, errors.New("missing cbid paramter"), http.StatusBadRequest)
+			return
+		}
+		si := r.FormValue("sid")
+		if si == "" {
+			returnAPIError(&s.config, w, errors.New("missing sid paramter"), http.StatusBadRequest)
+			return
+		}
+		p := r.FormValue("preferences")
+		if p == "" {
+			returnAPIError(&s.config, w, errors.New("missing preferences paramter"), http.StatusBadRequest)
+			return
+		}
+
+		o := OfferID{pl,
+			pu,
+			c,
+			si,
+			p}
+
+		os, err := o.AsString()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			return
+		}
+
+		owid, err := encodeAsOWID(s, r, os)
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			return
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write([]byte(owid))
 	}
 }
