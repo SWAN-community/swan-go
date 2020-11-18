@@ -17,19 +17,21 @@
 package swan
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
+	"swift"
 	"time"
 )
 
-func handlerDecrypt(s *services) http.HandlerFunc {
+func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var results []*Pair
+		var results *swift.Results
 
 		// Decrypt the string with the access node.
 		in, err := decrypt(s, r.URL.RawQuery)
@@ -39,16 +41,20 @@ func handlerDecrypt(s *services) http.HandlerFunc {
 		}
 
 		// Get the results.
-		err = json.Unmarshal(in, &results)
+		results, err = swift.DecodeResults(in)
 		if err != nil {
-			log.Println(string(in))
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 			return
 		}
 
 		// Change the values to OWIDs.
-		for _, p := range results {
-			p.Value, err = encodeAsOWID(s, r, p.Value)
+		for _, p := range results.Values {
+			if p.Key == "email" {
+				p.Key = "sid"
+				p.Value, err = encodeAsOWID(s, r, createSID(p.Value))
+			} else {
+				p.Value, err = encodeAsOWID(s, r, p.Value)
+			}
 			if err != nil {
 				returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 				return
@@ -56,12 +62,12 @@ func handlerDecrypt(s *services) http.HandlerFunc {
 		}
 
 		// Modify the expiry time.
-		for _, i := range results {
+		for _, i := range results.Values {
 			i.Expires = time.Now().UTC().Add(time.Second * s.config.Timeout)
 		}
 
 		// Return the results as a JSON string.
-		if err := json.NewEncoder(w).Encode(results); err != nil {
+		if err := json.NewEncoder(w).Encode(results.Values); err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 		}
 	}
@@ -105,4 +111,12 @@ func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
 
 	// Create the OWID.
 	return c.CreateOWID(v)
+}
+
+// TODO : What hashing algorithm do we want to use to turn email address into
+// hashes?
+func createSID(s string) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(s))
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

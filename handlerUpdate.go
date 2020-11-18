@@ -18,7 +18,6 @@ package swan
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -26,7 +25,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerFetch(s *services) http.HandlerFunc {
+func handlerUpdate(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the form values from the input request.
@@ -52,6 +51,13 @@ func handlerFetch(s *services) http.HandlerFunc {
 				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
 				q.Set(fmt.Sprintf("email<%s", t), "")
 				q.Set(fmt.Sprintf("allow<%s", t), "")
+
+				// Store the return URL from the publisher in the state for the
+				// the storage operation in SWIFT. Then replace the return URL
+				// with the SWAN preferences page URL.
+				q.Set("state", q.Get("returnUrl"))
+				q.Set("returnUrl",
+					s.config.Scheme+"://"+r.Host+"/swan/preferences/")
 			})
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
@@ -63,58 +69,4 @@ func handlerFetch(s *services) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Write([]byte(u))
 	}
-}
-
-func createStorageOperationURL(
-	s *services,
-	q *url.Values,
-	fn func(q *url.Values)) (string, error) {
-
-	// Check that an access node exists for SWAN. If not try to update the
-	// access node before erroring.
-	if s.accessNode == "" {
-		an, err := s.swift.GetAccessNode(s.config.Network)
-		if err != nil && an == "" {
-			return "", fmt.Errorf("An access node has not been created for the"+
-				" '%s' network. Use http[s]://[domain]/swift/register to start"+
-				" the network.",
-				s.config.Network)
-		}
-		s.accessNode = an
-	}
-
-	// Build a new URL to request the first storage operation URL.
-	u, err := url.Parse(s.config.Scheme + "://" + s.accessNode)
-	if err != nil {
-		return "", err
-	}
-	u.Path = "/swift/api/v1/create"
-
-	// Use the function passed to the method to add any additional query
-	// parameters.
-	fn(q)
-
-	// Set the table to SWAN.
-	q.Set("table", "swan")
-
-	// Copy the query string parameters exactly from those provided by the
-	// publisher.
-	u.RawQuery = q.Encode()
-
-	// Get the first storage URL from the access node.
-	res, err := http.Get(u.String())
-	if err != nil {
-		return "", err
-	}
-	if res.StatusCode != http.StatusOK {
-		return "", newResponseError(u.String(), res)
-	}
-
-	// Read the response as a string.
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
 }
