@@ -19,7 +19,6 @@ package swan
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/gob"
 )
 
 // OfferID (aka Transaction ID or Bid ID) contains the information about the
@@ -43,25 +42,23 @@ func NewOfferID(s string) (*OfferID, error) {
 	}
 
 	buf := bytes.NewBuffer(b)
-	dec := gob.NewDecoder(buf)
-	err = dec.Decode(&o)
-	if err != nil {
-		return nil, err
-	}
+	o.setFromBuffer(buf)
 
 	return &o, nil
+}
+
+// SetFromByteArray sets OfferID from bytes
+func (o *OfferID) SetFromByteArray(b []byte) error {
+	buf := bytes.NewBuffer(b)
+
+	return o.setFromBuffer(buf)
 }
 
 // AsByteArray returns the OfferID as a byte array.
 func (o *OfferID) AsByteArray() ([]byte, error) {
 	var buf bytes.Buffer
 
-	enc := gob.NewEncoder(&buf)
-
-	err := enc.Encode(o)
-	if err != nil {
-		return nil, err
-	}
+	o.writeToBuffer(&buf)
 
 	return buf.Bytes(), nil
 }
@@ -74,4 +71,53 @@ func (o *OfferID) AsString() (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
+	err := writeString(b, o.Placement)
+	if err != nil {
+		return err
+	}
+	err = writeString(b, o.PubDomain)
+	if err != nil {
+		return err
+	}
+	err = writeString(b, o.CBID)
+	if err != nil {
+		return err
+	}
+	err = writeString(b, o.SID)
+	if err != nil {
+		return err
+	}
+	err = writeString(b, o.Preferences)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (o *OfferID) setFromBuffer(b *bytes.Buffer) error {
+	var err error
+	o.Placement, err = readString(b)
+	if err != nil {
+		return err
+	}
+	o.PubDomain, err = readString(b)
+	if err != nil {
+		return err
+	}
+	o.CBID, err = readString(b)
+	if err != nil {
+		return err
+	}
+	o.SID, err = readString(b)
+	if err != nil {
+		return err
+	}
+	o.Preferences, err = readString(b)
+	if err != nil {
+		return err
+	}
+	return nil
 }
