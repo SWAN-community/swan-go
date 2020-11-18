@@ -42,6 +42,7 @@ func AddHandlers(
 	// Add the SWAN handlers.
 	http.HandleFunc("/swan/api/v1/fetch", handlerFetch(s))
 	http.HandleFunc("/swan/api/v1/decrypt", handlerDecrypt(s))
+	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
 	http.HandleFunc("/swan/preferences", handlerCapture(s))
 }
 
