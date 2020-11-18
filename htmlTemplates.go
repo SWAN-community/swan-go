@@ -111,18 +111,24 @@ var captureTemplate = newHTMLTemplate("capture", `
         }
         @media only screen and (max-width: 480px) {
             .checkbox span {
-            display: block;
-        }
+                display: block;
+            }
         }
         .button {
             float: right;
             margin-top: 1em;
         }
+        .button-link {
+            background-color: transparent;
+            text-decoration: underline;
+            border: none;
+            cursor: pointer;
+        }        
         .button input, .button a {
             -webkit-appearance: none;
             display: block;
             padding: 0.5em;
-            background-color:black;
+            background-color: black;
             text-decoration: none;
             color: white;
             border: none;
@@ -150,7 +156,7 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <h1>{{ .Title }}</h1>
             </li>
             <li>
-                <label for="cbid">Common Browser Id</label><span><a href="{{ .ResetURL }}">reset</a></span>
+                <label for="cbid">Common Browser Id</label><input style="float:right" class="button-link"  type="submit" value="Reset" name="reset-cbid"/>    
             </li>
             <li>
                 <input class="textbox disabled textbox-size" type="text" id="cbid" name="cbid" value="{{ .CBID }}" readonly/>
@@ -171,6 +177,9 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <div class="button button-size">
                     <input type="submit" value="Update"/>
                 </div>
+                <div class="button button-size">
+                    <input style="background-color: grey;" type="submit" value="Reset" name="reset-all"/>
+                </div>            
             </li>
         </ul>
     </form>

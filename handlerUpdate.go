@@ -28,30 +28,36 @@ import (
 func handlerUpdate(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Get the form values from the input request.
+		err := r.ParseForm()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Copy the incoming parameters into the outgoing ones.
+		q, err := url.ParseQuery(r.Form.Encode())
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
 		// Create the URL with the parameters provided by the publisher.
 		u, err := createStorageOperationURL(
 			s,
-			r.URL.RawQuery,
+			&q,
 			func(q *url.Values) {
 				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
 				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
 				q.Set(fmt.Sprintf("email<%s", t), "")
 				q.Set(fmt.Sprintf("allow<%s", t), "")
 
-				// As this is an update operation the return URL for the SWIFT
-				// operation is the SWAN preferences page and not the final
-				// URL provided by the caller.
-				ru, err := url.Parse(
-					s.config.Scheme + "://" + r.Host + "/swan/preferences")
-				if err != nil {
-					returnAPIError(&s.config, w, err,
-						http.StatusInternalServerError)
-					return
-				}
-				rq := ru.Query()
-				rq.Set("returnUrl", q.Get("returnUrl"))
-				ru.RawQuery = rq.Encode()
-				q.Set("returnUrl", ru.String())
+				// Store the return URL from the publisher in the state for the
+				// the storage operation in SWIFT. Then replace the return URL
+				// with the SWAN preferences page URL.
+				q.Set("state", q.Get("returnUrl"))
+				q.Set("returnUrl",
+					s.config.Scheme+"://"+r.Host+"/swan/preferences/")
 			})
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)

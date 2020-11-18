@@ -29,10 +29,24 @@ import (
 func handlerFetch(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Get the form values from the input request.
+		err := r.ParseForm()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Copy the incoming parameters into the outgoing ones.
+		q, err := url.ParseQuery(r.Form.Encode())
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
 		// Create the URL with the parameters provided by the publisher.
 		u, err := createStorageOperationURL(
 			s,
-			r.URL.RawQuery,
+			&q,
 			func(q *url.Values) {
 				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
 				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
@@ -53,7 +67,7 @@ func handlerFetch(s *services) http.HandlerFunc {
 
 func createStorageOperationURL(
 	s *services,
-	p string,
+	q *url.Values,
 	fn func(q *url.Values)) (string, error) {
 
 	// Check that an access node exists for SWAN.
@@ -73,11 +87,7 @@ func createStorageOperationURL(
 
 	// Use the function passed to the method to add any additional query
 	// parameters.
-	q, err := url.ParseQuery(p)
-	if err != nil {
-		return "", err
-	}
-	fn(&q)
+	fn(q)
 
 	// Set the table to SWAN.
 	q.Set("table", "swan")

@@ -20,73 +20,62 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"owid"
+	"strings"
+	"swift"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type model struct {
-	services *services     // Services contain
-	request  *http.Request // The HTTP request used to generate the page.
-	title    string        // The title for the data capture form
+	url.Values
 }
 
-func (m *model) Title() string { return m.title }
-func (m *model) CBID() string  { return getOWIDValue(m.request.Form.Get("cbid")) }
-func (m *model) Email() string { return getOWIDValue(m.request.Form.Get("email")) }
-func (m *model) Allow() string { return getOWIDValue(m.request.Form.Get("allow")) }
-func (m *model) BackgroundColor() string {
-	return m.request.Form.Get("backgroundColor")
-}
-func (m *model) ResetURL() string {
-	err := m.request.ParseForm()
-	if err != nil {
-		return ""
-	}
-	q := m.request.URL.Query()
-	c, err := encodeAsOWID(m.services, m.request, uuid.New().String())
-	if err != nil {
-		return ""
-	}
-	q.Set("cbid", c)
-	return "?" + q.Encode()
-}
-
-func getOWIDValue(v string) string {
-	o, err := owid.DecodeFromBase64(v)
-	if err == nil {
-		return string(o.Payload)
-	}
-	return ""
-}
+func (m *model) Title() string           { return m.Get("title") }
+func (m *model) CBID() string            { return m.Get("cbid") }
+func (m *model) Email() string           { return m.Get("email") }
+func (m *model) Allow() string           { return m.Get("allow") }
+func (m *model) BackgroundColor() string { return m.Get("backgroundColor") }
 
 func handlerCapture(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the model from the URL.
+		m, err := captureBuildModel(s, r)
+		if err != nil {
+			returnServerError(&s.config, w, err)
+			return
+		}
+
+		// Respond based on the method used.
 		switch r.Method {
 		case "GET":
-			handlerCaptureGet(s, w, r)
+			handlerCaptureGet(s, w, r, m)
 		case "POST":
-			handlerCapturePost(s, w, r)
+			handlerCapturePost(s, w, r, m)
 		}
 	}
 }
 
-func handlerCaptureGet(s *services, w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
-		return
-	}
+func handlerCaptureGet(
+	s *services,
+	w http.ResponseWriter,
+	r *http.Request,
+	m *model) {
 
-	err = captureTemplate.Execute(w, &model{s, r, r.Form.Get("title")})
+	// Display the user interface with the data provided.
+	err := captureTemplate.Execute(w, m)
 	if err != nil {
 		returnServerError(&s.config, w, err)
 		return
 	}
 }
 
-func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
+func handlerCapturePost(
+	s *services,
+	w http.ResponseWriter,
+	r *http.Request,
+	m *model) {
 
 	// Get the data provided in the post back.
 	err := r.ParseForm()
@@ -95,8 +84,43 @@ func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update the model with the values from the form.
+	m.Set("email", r.Form.Get("email"))
+	m.Set("allow", r.Form.Get("allow"))
+	m.Set("cbid", r.Form.Get("cbid"))
+
+	// Check to see if the post is as a result of the CBID reset.
+	if r.Form.Get("reset-cbid") != "" {
+
+		// Replace the CBID with a new random value.
+		m.Set("cbid", uuid.New().String())
+
+		// Display the template again.
+		err = captureTemplate.Execute(w, &m)
+		if err != nil {
+			returnServerError(&s.config, w, err)
+		}
+		return
+	}
+
+	// Check to see if the post is as a result for all data.
+	if r.Form.Get("reset-all") != "" {
+
+		// Replace the data.
+		m.Set("email", "")
+		m.Set("allow", "")
+		m.Set("cbid", uuid.New().String())
+
+		// Display the template again.
+		err = captureTemplate.Execute(w, &m)
+		if err != nil {
+			returnServerError(&s.config, w, err)
+		}
+		return
+	}
+
 	// Create the URL to use to write the values to Swift.
-	u, err := createStorageOperationURL(s, r.URL.RawQuery,
+	u, err := createStorageOperationURL(s, &m.Values,
 		func(q *url.Values) {
 
 			// Add any parameters from the form being posted back with a common
@@ -130,4 +154,39 @@ func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the browser window to start the write process.
 	http.Redirect(w, r, u, 303)
+}
+
+func captureBuildModel(s *services, r *http.Request) (*model, error) {
+	var m model
+	m.Values = make(url.Values)
+
+	// The last path segment is the data.
+	l := strings.LastIndex(r.URL.Path, "/")
+	if l < 0 {
+		return nil, fmt.Errorf("URL path contains no SWAN data")
+	}
+
+	in, err := decrypt(s, r.URL.Path[l+1:])
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the results.
+	res, err := swift.DecodeResults(in)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the form parameters from the data received from SWIFT.
+	m.Set("title", res.HTML.Title)
+	m.Set("backgroundColor", res.HTML.BackgroundColor)
+	m.Set("messageColor", res.HTML.MessageColor)
+	m.Set("progressColor", res.HTML.ProgressColor)
+	m.Set("message", res.HTML.Message)
+	m.Set("returnUrl", res.State)
+	m.Set("cbid", res.Get("cbid").Value)
+	m.Set("email", res.Get("email").Value)
+	m.Set("allow", res.Get("allow").Value)
+
+	return &m, nil
 }
