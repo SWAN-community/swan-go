@@ -28,7 +28,6 @@ type services struct {
 	config     Configuration
 	swift      *swift.Services // Services used by the SWIFT network
 	owid       *owid.Services  // Services used for OWID creation and verification
-	owidStore  owid.Store      // Access to the OWID data store
 	accessNode string          // The access node for the SWAN network
 }
 
@@ -86,7 +85,6 @@ func newServices(
 		c,
 		swift.NewServices(swiftConfig, swiftStore, swiftAccess, b),
 		owid.NewServices(owidConfig, owidStore, owidAccess),
-		owidStore,
 		an}
 }
 

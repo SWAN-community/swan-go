@@ -91,7 +91,7 @@ func decrypt(s *services, q string) ([]byte, error) {
 func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
 
 	// Get the creator associated with this SWAN domain.
-	c, err := s.owidStore.GetCreator(r.Host)
+	c, err := s.owid.GetCreator(r.Host)
 	if err != nil {
 		return "", err
 	}
