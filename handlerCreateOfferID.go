@@ -64,7 +64,7 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 			si,
 			p}
 
-		os, err := o.AsString()
+		os, err := o.AsByteArray()
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 			return

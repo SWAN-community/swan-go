@@ -48,7 +48,7 @@ func handlerDecrypt(s *services) http.HandlerFunc {
 
 		// Change the values to OWIDs.
 		for _, p := range results {
-			p.Value, err = encodeAsOWID(s, r, p.Value)
+			p.Value, err = encodeAsOWID(s, r, []byte(p.Value))
 			if err != nil {
 				returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 				return
@@ -88,7 +88,7 @@ func decrypt(s *services, q string) ([]byte, error) {
 	return ioutil.ReadAll(res.Body)
 }
 
-func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
+func encodeAsOWID(s *services, r *http.Request, v []byte) (string, error) {
 
 	// Get the creator associated with this SWAN domain.
 	c, err := s.owidStore.GetCreator(r.Host)
