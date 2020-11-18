@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +29,14 @@ import (
 
 func handlerFetch(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Check caller can access
+		if s.getAccessAllowed(w, r) == false {
+			returnAPIError(&s.config, w,
+				errors.New("Not authorized"),
+				http.StatusUnauthorized)
+			return
+		}
 
 		// Get the form values from the input request.
 		err := r.ParseForm()
@@ -70,12 +79,17 @@ func createStorageOperationURL(
 	q *url.Values,
 	fn func(q *url.Values)) (string, error) {
 
-	// Check that an access node exists for SWAN.
+	// Check that an access node exists for SWAN. If not try to update the
+	// access node before erroring.
 	if s.accessNode == "" {
-		return "", fmt.Errorf("An access node has not been created for the "+
-			"'%s' network. Use http[s]://[domain]/swift/register to start "+
-			"the network.",
-			s.config.Network)
+		an, err := s.swift.GetAccessNode(s.config.Network)
+		if err != nil && an == "" {
+			return "", fmt.Errorf("An access node has not been created for the"+
+				" '%s' network. Use http[s]://[domain]/swift/register to start"+
+				" the network.",
+				s.config.Network)
+		}
+		s.accessNode = an
 	}
 
 	// Build a new URL to request the first storage operation URL.

@@ -18,8 +18,8 @@ package swan
 
 import (
 	"crypto/sha1"
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -33,8 +33,23 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 
 		var results *swift.Results
 
+		// Check caller can access
+		if s.getAccessAllowed(w, r) == false {
+			returnAPIError(&s.config, w,
+				errors.New("Not authorized"),
+				http.StatusUnauthorized)
+			return
+		}
+
+		// Get the form values from the input request.
+		err := r.ParseForm()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
 		// Decrypt the string with the access node.
-		in, err := decrypt(s, r.URL.RawQuery)
+		in, err := decrypt(s, r.Form.Get("data"))
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 			return
@@ -53,7 +68,7 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 				p.Key = "sid"
 				p.Value, err = encodeAsOWID(s, r, createSID(p.Value))
 			} else {
-				p.Value, err = encodeAsOWID(s, r, p.Value)
+				p.Value, err = encodeAsOWID(s, r, []byte(p.Value))
 			}
 			if err != nil {
 				returnAPIError(&s.config, w, err, http.StatusInternalServerError)
@@ -73,7 +88,7 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 	}
 }
 
-func decrypt(s *services, q string) ([]byte, error) {
+func decrypt(s *services, d string) ([]byte, error) {
 
 	// Combine it with the access node to decrypt the result.
 	u, err := url.Parse(s.config.Scheme + "://" + s.accessNode)
@@ -81,7 +96,10 @@ func decrypt(s *services, q string) ([]byte, error) {
 		return nil, err
 	}
 	u.Path = "/swift/api/v1/decrypt"
-	u.RawQuery = q
+	q := u.Query()
+	q.Set("data", d)
+	q.Set("accessKey", s.config.AccessKey)
+	u.RawQuery = q.Encode()
 
 	// Call the URL and unpack the results if they're available.
 	res, err := http.Get(u.String())
@@ -94,10 +112,10 @@ func decrypt(s *services, q string) ([]byte, error) {
 	return ioutil.ReadAll(res.Body)
 }
 
-func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
+func encodeAsOWID(s *services, r *http.Request, v []byte) (string, error) {
 
 	// Get the creator associated with this SWAN domain.
-	c, err := s.owidStore.GetCreator(r.Host)
+	c, err := s.owid.GetCreator(r.Host)
 	if err != nil {
 		return "", err
 	}
@@ -115,8 +133,8 @@ func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
 
 // TODO : What hashing algorithm do we want to use to turn email address into
 // hashes?
-func createSID(s string) string {
+func createSID(s string) []byte {
 	hasher := sha1.New()
 	hasher.Write([]byte(s))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return hasher.Sum(nil)
 }

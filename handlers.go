@@ -28,10 +28,13 @@ import (
 // provided.
 func AddHandlers(
 	settingsFile string,
+	swanAccess Access,
+	swiftAccess swift.Access,
+	owidAccess owid.Access,
 	malformedHandler func(w http.ResponseWriter, r *http.Request)) {
 
 	// Create the new set of services.
-	s := newServices(settingsFile)
+	s := newServices(settingsFile, swanAccess, swiftAccess, owidAccess)
 
 	// Add the SWIFT handlers.
 	swift.AddHandlers(s.swift, malformedHandler)
@@ -43,7 +46,7 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/fetch", handlerFetch(s))
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/decode-as-json", handlerDecodeAsJSON(s))
-	http.HandleFunc("/swan/preferences/", handlerCapture(s))
+	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
 	http.HandleFunc("/swan/preferences", handlerCapture(s))
 }
 

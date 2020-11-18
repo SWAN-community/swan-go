@@ -18,7 +18,9 @@ package swan
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"owid"
 	"swift"
 )
@@ -28,21 +30,24 @@ type services struct {
 	config     Configuration
 	swift      *swift.Services // Services used by the SWIFT network
 	owid       *owid.Services  // Services used for OWID creation and verification
-	owidStore  owid.Store      // Access to the OWID data store
 	accessNode string          // The access node for the SWAN network
+	access     Access          // Instance of access service
 }
 
-// NewServices a set of services to use with SWIFT. These provide defaults via
+// newServices a set of services to use with SWIFT. These provide defaults via
 // the configuration parameter, and access to persistent storage via the store
 // parameter.
-func newServices(settingsFile string) *services {
+func newServices(
+	settingsFile string,
+	swanAccess Access,
+	swiftAccess swift.Access,
+	owidAccess owid.Access) *services {
 	var swiftStore swift.Store
 	var owidStore owid.Store
 
 	// Use the file provided to get the SWIFT settings.
 	swiftConfig := swift.NewConfig(settingsFile)
 	err := swiftConfig.Validate()
-
 	if err != nil {
 		panic(err)
 	}
@@ -50,14 +55,14 @@ func newServices(settingsFile string) *services {
 	// Use the file provided to get the OWID settings.
 	owidConfig := owid.NewConfig(settingsFile)
 	err = owidConfig.Validate()
-
 	if err != nil {
 		panic(err)
 	}
 
-	// Link to the SWIFT Azure storage if provided.
+	// Link to the SWIFT storage.
 	swiftStore = configreSwiftStore(swiftConfig)
-	// Link to the OWID Azure storage if provided.
+
+	// Link to the OWID storage.
 	owidStore = configureOwidStore(owidConfig)
 
 	// Get the default browser detector.
@@ -81,10 +86,10 @@ func newServices(settingsFile string) *services {
 	// Return the services.
 	return &services{
 		c,
-		swift.NewServices(swiftConfig, swiftStore, b),
-		owid.NewServices(owidConfig, owidStore),
-		owidStore,
-		an}
+		swift.NewServices(swiftConfig, swiftStore, swiftAccess, b),
+		owid.NewServices(owidConfig, owidStore, owidAccess),
+		an,
+		swanAccess}
 }
 
 func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
@@ -135,4 +140,25 @@ func configureOwidStore(owidConfig owid.Configuration) owid.Store {
 	}
 
 	return owidStore
+}
+
+// Returns true if the request is allowed to access the handler, otherwise false.
+// If false is returned then no further action is needed as the method will have
+// responded to the request already.
+func (s *services) getAccessAllowed(
+	w http.ResponseWriter,
+	r *http.Request) bool {
+	err := r.ParseForm()
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		return false
+	}
+	v, err := s.access.GetAllowed(r.FormValue("accessKey"))
+	if v == false || err != nil {
+		returnAPIError(&s.config, w,
+			fmt.Errorf("Access denied"),
+			http.StatusNetworkAuthenticationRequired)
+		return false
+	}
+	return true
 }

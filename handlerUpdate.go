@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -27,6 +28,14 @@ import (
 
 func handlerUpdate(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Check caller can access
+		if s.getAccessAllowed(w, r) == false {
+			returnAPIError(&s.config, w,
+				errors.New("Not authorized"),
+				http.StatusUnauthorized)
+			return
+		}
 
 		// Get the form values from the input request.
 		err := r.ParseForm()
