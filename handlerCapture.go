@@ -17,25 +17,40 @@
 package swan
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
 	"owid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type model struct {
-	request *http.Request // The HTTP request used to generate the page.
-	title   string        // The title for the data capture form
+	services *services     // Services contain
+	request  *http.Request // The HTTP request used to generate the page.
+	title    string        // The title for the data capture form
 }
 
 func (m *model) Title() string { return m.title }
 func (m *model) CBID() string  { return getOWIDValue(m.request.Form.Get("cbid")) }
+func (m *model) Email() string { return getOWIDValue(m.request.Form.Get("email")) }
 func (m *model) Allow() string { return getOWIDValue(m.request.Form.Get("allow")) }
 func (m *model) BackgroundColor() string {
 	return m.request.Form.Get("backgroundColor")
+}
+func (m *model) ResetURL() string {
+	err := m.request.ParseForm()
+	if err != nil {
+		return ""
+	}
+	q := m.request.URL.Query()
+	c, err := encodeAsOWID(m.services, m.request, uuid.New().String())
+	if err != nil {
+		return ""
+	}
+	q.Set("cbid", c)
+	return "?" + q.Encode()
 }
 
 func getOWIDValue(v string) string {
@@ -63,7 +78,8 @@ func handlerCaptureGet(s *services, w http.ResponseWriter, r *http.Request) {
 		returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	err = captureTemplate.Execute(w, &model{r, r.Form.Get("title")})
+
+	err = captureTemplate.Execute(w, &model{s, r, r.Form.Get("title")})
 	if err != nil {
 		returnServerError(&s.config, w, err)
 		return
@@ -87,12 +103,13 @@ func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
 			// date for expiry in 3 months.
 			t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
 
-			// Add the Common Browser ID prefering any existing values if they
-			// exist already.
-			q.Set(fmt.Sprintf("cbid<%s", t), r.PostForm.Get("cbid"))
+			// Add the Common Browser ID replacing any existing values if
+			// present in the network.
+			q.Set(fmt.Sprintf("cbid>%s", t), r.PostForm.Get("cbid"))
 
-			// Add the email hash as a Universally Unique ID.
-			q.Set(fmt.Sprintf("uuid>%s", t), createUUID(r.PostForm.Get("email")))
+			// Add the email so that it can verified as some time in the future
+			// if necessary by the SWAN provider.
+			q.Set(fmt.Sprintf("email>%s", t), r.PostForm.Get("email"))
 
 			if r.PostForm.Get("allow") == "" {
 				q.Set(fmt.Sprintf("allow>%s", t), "off")
@@ -103,7 +120,6 @@ func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
 			// Delete the keys that were provided from the publisher so that the
 			// conflict resolution policy and date can be applied.
 			q.Del("cbid")
-			q.Del("uuid")
 			q.Del("email")
 			q.Del("allow")
 		})
@@ -114,12 +130,4 @@ func handlerCapturePost(s *services, w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the browser window to start the write process.
 	http.Redirect(w, r, u, 303)
-}
-
-// TODO : What hashing algorithm do we want to use to turn email address into
-// hashes?
-func createUUID(v string) string {
-	hasher := sha1.New()
-	hasher.Write([]byte(v))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

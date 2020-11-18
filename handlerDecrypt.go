@@ -17,6 +17,8 @@
 package swan
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -48,7 +50,12 @@ func handlerDecrypt(s *services) http.HandlerFunc {
 
 		// Change the values to OWIDs.
 		for _, p := range results {
-			p.Value, err = encodeAsOWID(s, r, p.Value)
+			if p.Key == "email" {
+				p.Key = "sid"
+				p.Value, err = encodeAsOWID(s, r, createSID(p.Value))
+			} else {
+				p.Value, err = encodeAsOWID(s, r, p.Value)
+			}
 			if err != nil {
 				returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 				return
@@ -105,4 +112,12 @@ func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
 
 	// Create the OWID.
 	return c.CreateOWID(v)
+}
+
+// TODO : What hashing algorithm do we want to use to turn email address into
+// hashes?
+func createSID(s string) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(s))
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

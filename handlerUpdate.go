@@ -18,7 +18,6 @@ package swan
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -26,7 +25,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerFetch(s *services) http.HandlerFunc {
+func handlerUpdate(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create the URL with the parameters provided by the publisher.
@@ -38,6 +37,21 @@ func handlerFetch(s *services) http.HandlerFunc {
 				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
 				q.Set(fmt.Sprintf("email<%s", t), "")
 				q.Set(fmt.Sprintf("allow<%s", t), "")
+
+				// As this is an update operation the return URL for the SWIFT
+				// operation is the SWAN preferences page and not the final
+				// URL provided by the caller.
+				ru, err := url.Parse(
+					s.config.Scheme + "://" + r.Host + "/swan/preferences")
+				if err != nil {
+					returnAPIError(&s.config, w, err,
+						http.StatusInternalServerError)
+					return
+				}
+				rq := ru.Query()
+				rq.Set("returnUrl", q.Get("returnUrl"))
+				ru.RawQuery = rq.Encode()
+				q.Set("returnUrl", ru.String())
 			})
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
@@ -49,57 +63,4 @@ func handlerFetch(s *services) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Write([]byte(u))
 	}
-}
-
-func createStorageOperationURL(
-	s *services,
-	p string,
-	fn func(q *url.Values)) (string, error) {
-
-	// Check that an access node exists for SWAN.
-	if s.accessNode == "" {
-		return "", fmt.Errorf("An access node has not been created for the "+
-			"'%s' network. Use http[s]://[domain]/swift/register to start "+
-			"the network.",
-			s.config.Network)
-	}
-
-	// Build a new URL to request the first storage operation URL.
-	u, err := url.Parse(s.config.Scheme + "://" + s.accessNode)
-	if err != nil {
-		return "", err
-	}
-	u.Path = "/swift/api/v1/create"
-
-	// Use the function passed to the method to add any additional query
-	// parameters.
-	q, err := url.ParseQuery(p)
-	if err != nil {
-		return "", err
-	}
-	fn(&q)
-
-	// Set the table to SWAN.
-	q.Set("table", "swan")
-
-	// Copy the query string parameters exactly from those provided by the
-	// publisher.
-	u.RawQuery = q.Encode()
-
-	// Get the first storage URL from the access node.
-	res, err := http.Get(u.String())
-	if err != nil {
-		return "", err
-	}
-	if res.StatusCode != http.StatusOK {
-		return "", newResponseError(u.String(), res)
-	}
-
-	// Read the response as a string.
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
 }

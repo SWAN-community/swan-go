@@ -150,7 +150,7 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <h1>{{ .Title }}</h1>
             </li>
             <li>
-                <label for="cbid">Common Browser Id</label>
+                <label for="cbid">Common Browser Id</label><span><a href="{{ .ResetURL }}">reset</a></span>
             </li>
             <li>
                 <input class="textbox disabled textbox-size" type="text" id="cbid" name="cbid" value="{{ .CBID }}" readonly/>
@@ -159,7 +159,7 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <label for="email">Email</label>
             </li>
             <li>
-                <input class="textbox textbox-size" type="text" id="email" name="email"/>
+                <input class="textbox textbox-size" type="text" id="email" name="email" value="{{ .Email }}"/>
             </li>
             <li>
                 <div class="checkbox">
