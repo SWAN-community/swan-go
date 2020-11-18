@@ -18,7 +18,6 @@ package swan
 
 import (
 	"crypto/sha1"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,7 +68,7 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 				p.Key = "sid"
 				p.Value, err = encodeAsOWID(s, r, createSID(p.Value))
 			} else {
-				p.Value, err = encodeAsOWID(s, r, p.Value)
+				p.Value, err = encodeAsOWID(s, r, []byte(p.Value))
 			}
 			if err != nil {
 				returnAPIError(&s.config, w, err, http.StatusInternalServerError)
@@ -113,7 +112,7 @@ func decrypt(s *services, d string) ([]byte, error) {
 	return ioutil.ReadAll(res.Body)
 }
 
-func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
+func encodeAsOWID(s *services, r *http.Request, v []byte) (string, error) {
 
 	// Get the creator associated with this SWAN domain.
 	c, err := s.owid.GetCreator(r.Host)
@@ -134,8 +133,8 @@ func encodeAsOWID(s *services, r *http.Request, v string) (string, error) {
 
 // TODO : What hashing algorithm do we want to use to turn email address into
 // hashes?
-func createSID(s string) string {
+func createSID(s string) []byte {
 	hasher := sha1.New()
 	hasher.Write([]byte(s))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return hasher.Sum(nil)
 }
