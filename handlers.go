@@ -47,7 +47,7 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/decode-as-json", handlerDecodeAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
-	http.HandleFunc("/swan/preferences", handlerCapture(s))
+	http.HandleFunc("/swan/preferences/", handlerCapture(s))
 }
 
 func newResponseError(url string, resp *http.Response) error {
