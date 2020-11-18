@@ -146,6 +146,9 @@ func handlerCapturePost(
 			q.Del("cbid")
 			q.Del("email")
 			q.Del("allow")
+
+			// Add the access key for the SWIFT network.
+			q.Set("accessKey", s.config.AccessKey)
 		})
 	if err != nil {
 		returnServerError(&s.config, w, err)

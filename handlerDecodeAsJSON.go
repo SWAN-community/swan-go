@@ -20,6 +20,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -33,8 +34,23 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 
 		var results *swift.Results
 
+		// Check caller can access
+		if s.getAccessAllowed(w, r) == false {
+			returnAPIError(&s.config, w,
+				errors.New("Not authorized"),
+				http.StatusUnauthorized)
+			return
+		}
+
+		// Get the form values from the input request.
+		err := r.ParseForm()
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
 		// Decrypt the string with the access node.
-		in, err := decrypt(s, r.URL.RawQuery)
+		in, err := decrypt(s, r.Form.Get("data"))
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
 			return
@@ -73,7 +89,7 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 	}
 }
 
-func decrypt(s *services, q string) ([]byte, error) {
+func decrypt(s *services, d string) ([]byte, error) {
 
 	// Combine it with the access node to decrypt the result.
 	u, err := url.Parse(s.config.Scheme + "://" + s.accessNode)
@@ -81,7 +97,10 @@ func decrypt(s *services, q string) ([]byte, error) {
 		return nil, err
 	}
 	u.Path = "/swift/api/v1/decrypt"
-	u.RawQuery = q
+	q := u.Query()
+	q.Set("data", d)
+	q.Set("accessKey", s.config.AccessKey)
+	u.RawQuery = q.Encode()
 
 	// Call the URL and unpack the results if they're available.
 	res, err := http.Get(u.String())

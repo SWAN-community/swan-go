@@ -28,12 +28,13 @@ import (
 // provided.
 func AddHandlers(
 	settingsFile string,
+	swanAccess Access,
 	swiftAccess swift.Access,
 	owidAccess owid.Access,
 	malformedHandler func(w http.ResponseWriter, r *http.Request)) {
 
 	// Create the new set of services.
-	s := newServices(settingsFile, swiftAccess, owidAccess)
+	s := newServices(settingsFile, swanAccess, swiftAccess, owidAccess)
 
 	// Add the SWIFT handlers.
 	swift.AddHandlers(s.swift, malformedHandler)
