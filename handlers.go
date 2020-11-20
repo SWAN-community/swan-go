@@ -73,6 +73,23 @@ func returnAPIError(
 	}
 }
 
+func returnRequestError(
+	c *Configuration,
+	w http.ResponseWriter,
+	err error,
+	code int) {
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if c.Debug {
+		http.Error(w, err.Error(), code)
+	} else {
+		http.Error(w, "", code)
+	}
+	if c.Debug {
+		println(err.Error())
+	}
+}
+
 func returnServerError(c *Configuration, w http.ResponseWriter, err error) {
 	w.Header().Set("Cache-Control", "no-cache")
 	if c.Debug {

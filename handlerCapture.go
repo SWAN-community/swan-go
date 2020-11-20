@@ -41,18 +41,47 @@ func handlerCapture(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the model from the URL.
-		m, err := captureBuildModel(s, r)
-		if err != nil {
-			returnServerError(&s.config, w, err)
+		var m model
+		m.Values = make(url.Values)
+
+		// The last path segment is the data.
+		l := strings.LastIndex(r.URL.Path, "/")
+		if l < 0 {
+			returnRequestError(&s.config, w, nil, http.StatusBadRequest)
 			return
 		}
+
+		// Decrypt the data. If not possible return a bad request error.
+		in, err := decrypt(s, r.URL.Path[l+1:])
+		if err != nil {
+			returnRequestError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+
+		// Get the results.
+		res, err := swift.DecodeResults(in)
+		if err != nil {
+			returnRequestError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+
+		// Build the form parameters from the data received from SWIFT.
+		m.Set("title", res.HTML.Title)
+		m.Set("backgroundColor", res.HTML.BackgroundColor)
+		m.Set("messageColor", res.HTML.MessageColor)
+		m.Set("progressColor", res.HTML.ProgressColor)
+		m.Set("message", res.HTML.Message)
+		m.Set("returnUrl", res.State)
+		m.Set("cbid", res.Get("cbid").Value)
+		m.Set("email", res.Get("email").Value)
+		m.Set("allow", res.Get("allow").Value)
 
 		// Respond based on the method used.
 		switch r.Method {
 		case "GET":
-			handlerCaptureGet(s, w, r, m)
+			handlerCaptureGet(s, w, r, &m)
 		case "POST":
-			handlerCapturePost(s, w, r, m)
+			handlerCapturePost(s, w, r, &m)
 		}
 	}
 }
@@ -157,39 +186,4 @@ func handlerCapturePost(
 
 	// Redirect the browser window to start the write process.
 	http.Redirect(w, r, u, 303)
-}
-
-func captureBuildModel(s *services, r *http.Request) (*model, error) {
-	var m model
-	m.Values = make(url.Values)
-
-	// The last path segment is the data.
-	l := strings.LastIndex(r.URL.Path, "/")
-	if l < 0 {
-		return nil, fmt.Errorf("URL path contains no SWAN data")
-	}
-
-	in, err := decrypt(s, r.URL.Path[l+1:])
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the results.
-	res, err := swift.DecodeResults(in)
-	if err != nil {
-		return nil, err
-	}
-
-	// Build the form parameters from the data received from SWIFT.
-	m.Set("title", res.HTML.Title)
-	m.Set("backgroundColor", res.HTML.BackgroundColor)
-	m.Set("messageColor", res.HTML.MessageColor)
-	m.Set("progressColor", res.HTML.ProgressColor)
-	m.Set("message", res.HTML.Message)
-	m.Set("returnUrl", res.State)
-	m.Set("cbid", res.Get("cbid").Value)
-	m.Set("email", res.Get("email").Value)
-	m.Set("allow", res.Get("allow").Value)
-
-	return &m, nil
 }
