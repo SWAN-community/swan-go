@@ -156,7 +156,7 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <h1>{{ .Title }}</h1>
             </li>
             <li>
-                <label for="cbid">Common Browser Id</label><input style="float:right" class="button-link"  type="submit" value="Reset" name="reset-cbid"/>    
+                <label for="cbid">Common Browser Id</label><input style="display: none;" type="submit" value="Update"/><input style="float:right" class="button-link" type="button" value="Reset" name="reset-cbid"/>    
             </li>
             <li>
                 <input class="textbox disabled textbox-size" type="text" id="cbid" name="cbid" value="{{ .CBID }}" readonly/>
