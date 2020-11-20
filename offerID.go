@@ -29,7 +29,6 @@ type OfferID struct {
 	PubDomain   string // The domain that the advertisement slot will appear on
 	UUID        []byte // A unique identifier for this offer
 	CBID        string // The Commmon Browser ID (not the OWID version)
-	SID         string // The Signed In ID (not the OWID version)
 	Preferences string // The privacy preferences string (not the OWID version)
 }
 
@@ -91,10 +90,6 @@ func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = writeString(b, o.SID)
-	if err != nil {
-		return err
-	}
 	err = writeString(b, o.Preferences)
 	if err != nil {
 		return err
@@ -117,10 +112,6 @@ func (o *OfferID) setFromBuffer(b *bytes.Buffer) error {
 		return err
 	}
 	o.CBID, err = readString(b)
-	if err != nil {
-		return err
-	}
-	o.SID, err = readString(b)
 	if err != nil {
 		return err
 	}

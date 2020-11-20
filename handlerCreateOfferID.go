@@ -71,14 +71,6 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 			return
 		}
 
-		sid, err := owid.DecodeFromBase64(r.FormValue("sid"))
-		if sid == nil || err != nil {
-			returnAPIError(&s.config, w,
-				errors.New("missing sid parameter"),
-				http.StatusBadRequest)
-			return
-		}
-
 		p, err := owid.DecodeFromBase64(r.FormValue("preferences"))
 		if p == nil || err != nil {
 			returnAPIError(&s.config, w,
@@ -98,7 +90,6 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 			pu,
 			uuid,
 			cbid.PayloadAsString(),
-			sid.PayloadAsString(),
 			p.PayloadAsString()}
 
 		os, err := oid.AsByteArray()
