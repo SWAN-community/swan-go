@@ -132,7 +132,6 @@ var captureTemplate = newHTMLTemplate("capture", `
             text-decoration: none;
             color: white;
             border: none;
-            margin-left: 1em;
             border-radius: 0;
         }
         .button-size input, .button-size a {
@@ -156,7 +155,9 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <h1>{{ .Title }}</h1>
             </li>
             <li>
-                <label for="cbid">Common Browser Id</label><input style="display: none;" type="submit" value="Update"/><input style="float:right" class="button-link" type="button" value="Reset" name="reset-cbid"/>    
+                <label for="cbid">Common Browser Id</label>
+                <input style="display: none;" type="submit" value="Update"/>
+                <input style="float:right" class="button-link" type="submit" value="Reset" name="reset-cbid"/>    
             </li>
             <li>
                 <input class="textbox disabled textbox-size" type="text" id="cbid" name="cbid" value="{{ .CBID }}" readonly/>
@@ -177,7 +178,7 @@ var captureTemplate = newHTMLTemplate("capture", `
                 <div class="button button-size">
                     <input type="submit" value="Update"/>
                 </div>
-                <div class="button button-size">
+                <div class="button button-size" style="float: left;">
                     <input style="background-color: grey;" type="submit" value="Reset" name="reset-all"/>
                 </div>            
             </li>
