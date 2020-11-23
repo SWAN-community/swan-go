@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"owid"
 	"swift"
 )
@@ -96,22 +97,31 @@ func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
 	var swiftStore swift.Store
 	var err error
 
-	if swiftConfig.AzureAccount != "" && swiftConfig.AzureAccessKey != "" {
+	azureAccountName, azureAccountKey :=
+		os.Getenv("AZURE_STORAGE_ACCOUNT"),
+		os.Getenv("AZURE_STORAGE_ACCESS_KEY")
+	if len(azureAccountName) > 0 || len(azureAccountKey) > 0 {
+		if len(azureAccountName) == 0 || len(azureAccountKey) == 0 {
+			panic(errors.New("Either the AZURE_STORAGE_ACCOUNT or " +
+				"AZURE_STORAGE_ACCESS_KEY environment variable is not set"))
+		}
+		log.Printf("SWIFT: Using Azure Table Storage")
 		swiftStore, err = swift.NewAzure(
-			swiftConfig.AzureAccount,
-			swiftConfig.AzureAccessKey)
+			azureAccountName,
+			azureAccountKey)
 		if err != nil {
 			panic(err)
 		}
-	} else if swiftConfig.UseDynamoDB {
-		swiftStore, err = swift.NewAWS(swiftConfig.AWSRegion)
+	} else {
+		log.Printf("SWIFT: Using AWS DynamoDB")
+		swiftStore, err = swift.NewAWS()
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	if swiftStore == nil {
-		panic(errors.New("owid store not configured"))
+		panic(errors.New("SWIFT: store not configured"))
 	}
 
 	return swiftStore
@@ -121,15 +131,24 @@ func configureOwidStore(owidConfig owid.Configuration) owid.Store {
 	var owidStore owid.Store
 	var err error
 
-	if owidConfig.AzureAccount != "" && owidConfig.AzureAccessKey != "" {
+	azureAccountName, azureAccountKey :=
+		os.Getenv("AZURE_STORAGE_ACCOUNT"),
+		os.Getenv("AZURE_STORAGE_ACCESS_KEY")
+	if len(azureAccountName) > 0 || len(azureAccountKey) > 0 {
+		if len(azureAccountName) == 0 || len(azureAccountKey) == 0 {
+			panic(errors.New("Either the AZURE_STORAGE_ACCOUNT or " +
+				"AZURE_STORAGE_ACCESS_KEY environment variable is not set"))
+		}
+		log.Printf("OWID: Using Azure Table Storage")
 		owidStore, err = owid.NewAzure(
-			owidConfig.AzureAccount,
-			owidConfig.AzureAccessKey)
+			azureAccountName,
+			azureAccountKey)
 		if err != nil {
 			panic(err)
 		}
-	} else if owidConfig.UseDynamoDB {
-		owidStore, err = owid.NewAWS(owidConfig.AWSRegion)
+	} else {
+		log.Printf("OWID: Using AWS DynamoDB")
+		owidStore, err = owid.NewAWS()
 		if err != nil {
 			panic(err)
 		}
