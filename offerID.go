@@ -36,7 +36,7 @@ type OfferID struct {
 func NewOfferID(s string) (*OfferID, error) {
 	var o OfferID
 
-	b, err := base64.StdEncoding.DecodeString(s)
+	b, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (o *OfferID) AsString() (string, error) {
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(b), nil
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
