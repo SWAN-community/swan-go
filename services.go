@@ -101,11 +101,11 @@ func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
 		os.Getenv("AZURE_STORAGE_ACCOUNT"),
 		os.Getenv("AZURE_STORAGE_ACCESS_KEY")
 	if len(azureAccountName) > 0 || len(azureAccountKey) > 0 {
+		log.Printf("SWIFT: Using Azure Table Storage")
 		if len(azureAccountName) == 0 || len(azureAccountKey) == 0 {
 			panic(errors.New("Either the AZURE_STORAGE_ACCOUNT or " +
-				"AZURE_STORAGE_ACCESS_KEY environment variable is not set"))
+				"AZURE_STORAGE_ACCESS_KEY environment variable is not set."))
 		}
-		log.Printf("SWIFT: Using Azure Table Storage")
 		swiftStore, err = swift.NewAzure(
 			azureAccountName,
 			azureAccountKey)
@@ -121,7 +121,8 @@ func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
 	}
 
 	if swiftStore == nil {
-		panic(errors.New("SWIFT: store not configured"))
+		panic(errors.New("SWIFT: store not configured, have you set AWS " +
+			" OR Azure Storage Table credentials?"))
 	}
 
 	return swiftStore
