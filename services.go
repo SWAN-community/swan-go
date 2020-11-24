@@ -61,7 +61,7 @@ func newServices(
 	}
 
 	// Link to the SWIFT storage.
-	swiftStore = configreSwiftStore(swiftConfig)
+	swiftStore = configureSwiftStore(swiftConfig)
 
 	// Link to the OWID storage.
 	owidStore = configureOwidStore(owidConfig)
@@ -93,7 +93,7 @@ func newServices(
 		swanAccess}
 }
 
-func configreSwiftStore(swiftConfig swift.Configuration) swift.Store {
+func configureSwiftStore(swiftConfig swift.Configuration) swift.Store {
 	var swiftStore swift.Store
 	var err error
 

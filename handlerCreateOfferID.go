@@ -45,7 +45,7 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 		}
 
 		// TODO : Verify that the OWIDs are valid before creating the offer ID.
-		// Do this using the call to the domain in the OWID and the standardised
+		// Do this using the call to the domain in the OWID and the standardized
 		// path. This is because the OWIDs could have come from anywhere.
 		pl := r.FormValue("placement")
 		if pl == "" {
