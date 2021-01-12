@@ -51,6 +51,9 @@ func handlerUpdate(s *services) http.HandlerFunc {
 			return
 		}
 
+		// Validate the common parameters.
+		validateCommon(s, w, r, q)
+
 		// Create the URL with the parameters provided by the publisher.
 		u, err := createStorageOperationURL(
 			s,
@@ -77,5 +80,30 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Write([]byte(u))
+	}
+}
+
+// validateCommon checks that mandatory fields, or optional fields that have
+// been provided in the API request for update and fetch actions are valid. If
+// they are  not then a bad request message is returned.
+func validateCommon(
+	s *services,
+	w http.ResponseWriter,
+	r *http.Request,
+	q url.Values) {
+	ru, err := url.Parse(q.Get("returnUrl"))
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		return
+	}
+	if ru.Scheme == "" {
+		returnAPIError(&s.config, w,
+			errors.New("returnUrl must include a scheme"),
+			http.StatusBadRequest)
+	}
+	if ru.Host == "" {
+		returnAPIError(&s.config, w,
+			errors.New("returnUrl must include a host"),
+			http.StatusBadRequest)
 	}
 }

@@ -52,6 +52,9 @@ func handlerFetch(s *services) http.HandlerFunc {
 			return
 		}
 
+		// Validate the common parameters.
+		validateCommon(s, w, r, q)
+
 		// Create the URL with the parameters provided by the publisher.
 		u, err := createStorageOperationURL(
 			s,
