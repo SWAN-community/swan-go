@@ -29,37 +29,32 @@ type OfferID struct {
 	PubDomain   string // The domain that the advertisement slot will appear on
 	UUID        []byte // A unique identifier for this offer
 	CBID        string // The Commmon Browser ID (not the OWID version)
+	SID         string // The Signed In ID (not the OWID version)
 	Preferences string // The privacy preferences string (not the OWID version)
 }
 
 // NewOfferID creates a new OfferID instance from the string provided. The string
 func NewOfferID(s string) (*OfferID, error) {
 	var o OfferID
-
 	b, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
-
 	buf := bytes.NewBuffer(b)
 	o.setFromBuffer(buf)
-
 	return &o, nil
 }
 
 // SetFromByteArray sets OfferID from bytes
 func (o *OfferID) SetFromByteArray(b []byte) error {
 	buf := bytes.NewBuffer(b)
-
 	return o.setFromBuffer(buf)
 }
 
 // AsByteArray returns the OfferID as a byte array.
 func (o *OfferID) AsByteArray() ([]byte, error) {
 	var buf bytes.Buffer
-
 	o.writeToBuffer(&buf)
-
 	return buf.Bytes(), nil
 }
 
@@ -69,7 +64,6 @@ func (o *OfferID) AsString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
@@ -87,6 +81,10 @@ func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
 		return err
 	}
 	err = writeString(b, o.CBID)
+	if err != nil {
+		return err
+	}
+	err = writeString(b, o.SID)
 	if err != nil {
 		return err
 	}
@@ -112,6 +110,10 @@ func (o *OfferID) setFromBuffer(b *bytes.Buffer) error {
 		return err
 	}
 	o.CBID, err = readString(b)
+	if err != nil {
+		return err
+	}
+	o.SID, err = readString(b)
 	if err != nil {
 		return err
 	}
