@@ -17,11 +17,9 @@
 package swan
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"owid"
 	"swift"
 )
@@ -61,10 +59,10 @@ func newServices(
 	}
 
 	// Link to the SWIFT storage.
-	swiftStore = configureSwiftStore(swiftConfig)
+	swiftStore = swift.NewStore(swiftConfig)
 
 	// Link to the OWID storage.
-	owidStore = configureOwidStore(owidConfig)
+	owidStore = owid.NewStore(owidConfig)
 
 	// Get the default browser detector.
 	b, err := swift.NewBrowserRegexes()
@@ -91,75 +89,6 @@ func newServices(
 		owid.NewServices(owidConfig, owidStore, owidAccess),
 		an,
 		swanAccess}
-}
-
-func configureSwiftStore(swiftConfig swift.Configuration) swift.Store {
-	var swiftStore swift.Store
-	var err error
-
-	azureAccountName, azureAccountKey :=
-		os.Getenv("AZURE_STORAGE_ACCOUNT"),
-		os.Getenv("AZURE_STORAGE_ACCESS_KEY")
-	if len(azureAccountName) > 0 || len(azureAccountKey) > 0 {
-		log.Printf("SWIFT: Using Azure Table Storage")
-		if len(azureAccountName) == 0 || len(azureAccountKey) == 0 {
-			panic(errors.New("Either the AZURE_STORAGE_ACCOUNT or " +
-				"AZURE_STORAGE_ACCESS_KEY environment variable is not set."))
-		}
-		swiftStore, err = swift.NewAzure(
-			azureAccountName,
-			azureAccountKey)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		log.Printf("SWIFT: Using AWS DynamoDB")
-		swiftStore, err = swift.NewAWS()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if swiftStore == nil {
-		panic(errors.New("SWIFT: store not configured, have you set AWS " +
-			" OR Azure Storage Table credentials?"))
-	}
-
-	return swiftStore
-}
-
-func configureOwidStore(owidConfig owid.Configuration) owid.Store {
-	var owidStore owid.Store
-	var err error
-
-	azureAccountName, azureAccountKey :=
-		os.Getenv("AZURE_STORAGE_ACCOUNT"),
-		os.Getenv("AZURE_STORAGE_ACCESS_KEY")
-	if len(azureAccountName) > 0 || len(azureAccountKey) > 0 {
-		if len(azureAccountName) == 0 || len(azureAccountKey) == 0 {
-			panic(errors.New("Either the AZURE_STORAGE_ACCOUNT or " +
-				"AZURE_STORAGE_ACCESS_KEY environment variable is not set"))
-		}
-		log.Printf("OWID: Using Azure Table Storage")
-		owidStore, err = owid.NewAzure(
-			azureAccountName,
-			azureAccountKey)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		log.Printf("OWID: Using AWS DynamoDB")
-		owidStore, err = owid.NewAWS()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if owidStore == nil {
-		panic(errors.New("owid store not configured"))
-	}
-
-	return owidStore
 }
 
 // Returns true if the request is allowed to access the handler, otherwise false.
