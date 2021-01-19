@@ -127,8 +127,14 @@ func encodeAsOWID(s *services, r *http.Request, v []byte) (string, error) {
 			r.Host)
 	}
 
-	// Create the OWID.
-	return c.CreateOWID(v)
+	// Create and sign the OWID.
+	o := c.CreateOWID(v)
+	err = c.Sign(o)
+	if err != nil {
+		return "", err
+	}
+
+	return o.TreeAsBase64()
 }
 
 // TODO : What hashing algorithm do we want to use to turn email address into

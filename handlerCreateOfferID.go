@@ -18,6 +18,7 @@ package swan
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"owid"
 
@@ -38,86 +39,131 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 			return
 		}
 
-		err := r.ParseForm()
+		// Get the creator associated with this SWAN domain.
+		c, err := s.owid.GetCreator(r.Host)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+		if c == nil {
+			err = fmt.Errorf(
+				"No creator for '%s'. Use http[s]://%s/owid/register to setup "+
+					"domain.",
+				r.Host,
+				r.Host)
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return
 		}
 
-		// TODO : Verify that the OWIDs are valid before creating the offer ID.
-		// Do this using the call to the domain in the OWID and the standardized
-		// path. This is because the OWIDs could have come from anywhere.
-		pl := r.FormValue("placement")
-		if pl == "" {
-			returnAPIError(&s.config, w,
-				errors.New("missing placement parameter"),
-				http.StatusUnprocessableEntity)
-			return
-		}
-
-		pu := r.FormValue("pubdomain")
-		if pu == "" {
-			returnAPIError(&s.config, w,
-				errors.New("missing pubdomain parameter"),
-				http.StatusBadRequest)
-			return
-		}
-
-		cbid, err := owid.DecodeFromBase64(r.FormValue("cbid"))
-		if cbid == nil || err != nil {
-			returnAPIError(&s.config, w,
-				errors.New("missing cbid parameter"),
-				http.StatusBadRequest)
-			return
-		}
-
-		sid, err := owid.DecodeFromBase64(r.FormValue("sid"))
-		if cbid == nil || err != nil {
-			returnAPIError(&s.config, w,
-				errors.New("missing sid parameter"),
-				http.StatusBadRequest)
-			return
-		}
-
-		p, err := owid.DecodeFromBase64(r.FormValue("preferences"))
-		if p == nil || err != nil {
-			returnAPIError(&s.config, w,
-				errors.New("missing preferences parameter"),
-				http.StatusBadRequest)
-			return
-		}
-
-		// Random one time data is used to ensure the Offer ID is unique for all
-		// time.
-		uuid, err := uuid.New().MarshalBinary()
+		// Create the offer ID.
+		o, err := createOfferID(s, r, c)
 		if err != nil {
-			returnServerError(&s.config, w, err)
-			return
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
 
-		oid := OfferID{
-			pl,
-			pu,
-			uuid,
-			cbid.PayloadAsString(),
-			sid.PayloadAsString(),
-			p.PayloadAsString()}
-
-		os, err := oid.AsByteArray()
+		// Return the Offer ID as a byte array.
+		b, err := o.TreeAsByteArray()
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
-			return
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
-
-		owid, err := encodeAsOWID(s, r, os)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
-			return
-		}
-
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Write([]byte(owid))
+		w.Write(b)
 	}
+}
+
+func createOfferID(
+	s *services,
+	r *http.Request,
+	c *owid.Creator) (*owid.OWID, error) {
+	of, err := getOfferID(s, r)
+	if err != nil {
+		return nil, err
+	}
+	b, err := of.AsByteArray()
+	if err != nil {
+		return nil, err
+	}
+	o := c.CreateOWID(b)
+	err = c.Sign(o)
+	if err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+func getValue(r *http.Request, k string) (string, error) {
+	v := r.FormValue(k)
+	if v == "" {
+		return "", fmt.Errorf("missing '%s' parameter", k)
+	}
+	return v, nil
+}
+
+func getOWID(s *services, r *http.Request, k string) (*owid.OWID, error) {
+	v, err := getValue(r, k)
+	if err != nil {
+		return nil, err
+	}
+	o, err := owid.TreeFromBase64(v)
+	if err != nil {
+		return nil, err
+	}
+	e, err := o.Verify(s.config.Scheme)
+	if err != nil {
+		return nil, err
+	}
+	if e == false {
+		return nil, fmt.Errorf("'%s' not a valid OWID", k)
+	}
+	return o, nil
+}
+
+func getOfferID(s *services, r *http.Request) (*Offer, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return nil, err
+	}
+
+	pl, err := getValue(r, "placement")
+	if pl == "" {
+		return nil, err
+	}
+
+	pu, err := getValue(r, "pubdomain")
+	if pu == "" {
+		return nil, err
+	}
+
+	cbid, err := getOWID(s, r, "cbid")
+	if err != nil {
+		return nil, err
+	}
+
+	sid, err := getOWID(s, r, "sid")
+	if err != nil {
+		return nil, err
+	}
+
+	pref, err := getOWID(s, r, "preferences")
+	if err != nil {
+		return nil, err
+	}
+
+	// Random one time data is used to ensure the Offer ID is unique for all
+	// time.
+	uuid, err := uuid.New().MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the offer byte array.
+	return &Offer{
+		pl,
+		pu,
+		uuid,
+		cbid.Payload,
+		sid.Payload,
+		pref.Payload}, nil
 }

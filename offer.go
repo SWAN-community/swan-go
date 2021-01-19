@@ -18,56 +18,40 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
+	"owid"
 )
 
-// OfferID (aka Transaction ID or Bid ID) contains the information about the
+// Offer (aka Transaction ID or Bid ID) contains the information about the
 // opportunity to advertise with a publisher. It is created by the SWAN host
 // as an OWID and as such is signed by the SWAN host and not the publisher.
-type OfferID struct {
+type Offer struct {
 	Placement   string // A value assigned by the publisher for the advertisement slot on the web page
 	PubDomain   string // The domain that the advertisement slot will appear on
 	UUID        []byte // A unique identifier for this offer
-	CBID        string // The Commmon Browser ID (not the OWID version)
-	SID         string // The Signed In ID (not the OWID version)
-	Preferences string // The privacy preferences string (not the OWID version)
+	CBID        []byte // The Commmon Browser ID (not the OWID version)
+	SID         []byte // The Signed In ID (not the OWID version)
+	Preferences []byte // The privacy preferences string (not the OWID version)
 }
 
-// NewOfferID creates a new OfferID instance from the string provided. The string
-func NewOfferID(s string) (*OfferID, error) {
-	var o OfferID
-	b, err := base64.RawURLEncoding.DecodeString(s)
+// OfferFromOWID returns an Offer created from the OWID payload.
+func OfferFromOWID(i *owid.OWID) (*Offer, error) {
+	var o Offer
+	buf := bytes.NewBuffer(i.Payload)
+	err := o.setFromBuffer(buf)
 	if err != nil {
 		return nil, err
 	}
-	buf := bytes.NewBuffer(b)
-	o.setFromBuffer(buf)
 	return &o, nil
 }
 
-// SetFromByteArray sets OfferID from bytes
-func (o *OfferID) SetFromByteArray(b []byte) error {
-	buf := bytes.NewBuffer(b)
-	return o.setFromBuffer(buf)
-}
-
-// AsByteArray returns the OfferID as a byte array.
-func (o *OfferID) AsByteArray() ([]byte, error) {
+// AsByteArray returns the Offer as a byte array.
+func (o *Offer) AsByteArray() ([]byte, error) {
 	var buf bytes.Buffer
 	o.writeToBuffer(&buf)
 	return buf.Bytes(), nil
 }
 
-// AsString returns the OfferID as a base 64 encoded string.
-func (o *OfferID) AsString() (string, error) {
-	b, err := o.AsByteArray()
-	if err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
+func (o *Offer) writeToBuffer(b *bytes.Buffer) error {
 	err := writeString(b, o.Placement)
 	if err != nil {
 		return err
@@ -80,22 +64,22 @@ func (o *OfferID) writeToBuffer(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = writeString(b, o.CBID)
+	err = writeByteArray(b, o.CBID)
 	if err != nil {
 		return err
 	}
-	err = writeString(b, o.SID)
+	err = writeByteArray(b, o.SID)
 	if err != nil {
 		return err
 	}
-	err = writeString(b, o.Preferences)
+	err = writeByteArray(b, o.Preferences)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *OfferID) setFromBuffer(b *bytes.Buffer) error {
+func (o *Offer) setFromBuffer(b *bytes.Buffer) error {
 	var err error
 	o.Placement, err = readString(b)
 	if err != nil {
@@ -109,15 +93,15 @@ func (o *OfferID) setFromBuffer(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.CBID, err = readString(b)
+	o.CBID, err = readByteArray(b)
 	if err != nil {
 		return err
 	}
-	o.SID, err = readString(b)
+	o.SID, err = readByteArray(b)
 	if err != nil {
 		return err
 	}
-	o.Preferences, err = readString(b)
+	o.Preferences, err = readByteArray(b)
 	if err != nil {
 		return err
 	}
