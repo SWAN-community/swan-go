@@ -134,7 +134,7 @@ func encodeAsOWID(s *services, r *http.Request, v []byte) (string, error) {
 		return "", err
 	}
 
-	return o.TreeAsBase64()
+	return o.AsBase64()
 }
 
 // TODO : What hashing algorithm do we want to use to turn email address into
