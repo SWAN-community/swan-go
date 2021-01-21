@@ -32,7 +32,7 @@ type Pair struct {
 
 // AsOWID returns the Value as an OWID structure.
 func (p *Pair) AsOWID() (*owid.OWID, error) {
-	return owid.TreeFromBase64(p.Value)
+	return owid.FromBase64(p.Value)
 }
 
 // AsBase64 returns the Value OWID as a base 64 string.
@@ -41,5 +41,5 @@ func (p *Pair) AsBase64() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return o.TreeAsBase64()
+	return o.AsBase64()
 }

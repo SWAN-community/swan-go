@@ -62,7 +62,7 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 		}
 
 		// Return the Offer ID as a byte array.
-		b, err := o.TreeAsByteArray()
+		b, err := o.AsByteArray()
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
@@ -106,7 +106,7 @@ func getOWID(s *services, r *http.Request, k string) (*owid.OWID, error) {
 	if err != nil {
 		return nil, err
 	}
-	o, err := owid.TreeFromBase64(v)
+	o, err := owid.FromBase64(v)
 	if err != nil {
 		return nil, err
 	}
