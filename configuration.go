@@ -27,9 +27,9 @@ import (
 type Configuration struct {
 	Scheme    string        `json:"scheme"` // The scheme to use for requests
 	Debug     bool          `json:"debug"`
-	Network   string        `json:"swanNetwork"`   // The name of the SWIFT network supporting SWAN
-	Timeout   time.Duration `json:"cookieTimeout"` // Seconds until the data provided from the CMP expires
-	AccessKey string        `json:"accessKey"`     // Key to authenticate with the nodes
+	Network   string        `json:"swanNetwork"`  // The name of the SWIFT network supporting SWAN
+	Timeout   time.Duration `json:"valueTimeout"` // Seconds until the value provided expires and must be revalidated with SWAN
+	AccessKey string        `json:"accessKey"`    // Key to authenticate with the nodes
 }
 
 // NewConfig creates a new instance of configuration from the file provided.
