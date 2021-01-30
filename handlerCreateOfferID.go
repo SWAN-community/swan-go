@@ -69,7 +69,12 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Write(b)
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
+		_, err = w.Write(b)
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

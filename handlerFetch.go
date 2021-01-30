@@ -66,14 +66,20 @@ func handlerFetch(s *services) http.HandlerFunc {
 				q.Set(fmt.Sprintf("allow<%s", t), "")
 			})
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return
 		}
 
 		// Return the URL as a text string.
+		b := []byte(u)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Write([]byte(u))
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
+		_, err = w.Write(b)
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
