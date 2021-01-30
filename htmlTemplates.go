@@ -29,160 +29,95 @@ var captureTemplate = newHTMLTemplate("capture", `
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>{{ .Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/bootstrap.min.css" rel="stylesheet">
     <style>
+    .modal {
+        display: block;
+    }
+    .reset {
+        float:right;
+        border: none;
+        background: none;
+        font-size: 0.8em;
+        text-decoration: underline;
+    }
+    body, .blur {
+        height: 100vh;
+        width: 100vw;
+    }
+    body {
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: {{ .BackgroundColor }};
+        backdrop-filter: blur(4px);
+    }
+    .blur {
+        background-color: rgba(0,0,0, 0.4);
+    }
+    @media only screen and (max-width: 600px) {
         body {
-            margin: 0;
-            padding: 0;
-            font-family: nunito, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: {{ .BackgroundColor }};
+            background-image: url(//{{ .PublisherHost }}/background-600.png);
         }
-        input {
-            border-radius: 0;
+    }
+    @media only screen and (min-width: 600px) {
+        body {
+            background-image: url(//{{ .PublisherHost }}/background-767.png);
         }
-        form {
-            background-color: white;
-            border-color: black;
-            border-width: 2px;
-            border-style: solid;
-            color: black;
-            padding: 1em;
+    }
+    @media only screen and (min-width: 768px) {
+        {
+            background-image: url(//{{ .PublisherHost }}/background-991.png);
         }
-        p {
-            display: inline;
+    }
+    @media only screen and (min-width: 992px) {
+        body {
+            background-image: url(//{{ .PublisherHost }}/background-1199.png);
         }
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+    }
+    @media only screen and (min-width: 1200px) {
+        body {
+            background-image: url(//{{ .PublisherHost }}/background.png);
         }
-        li {
-            vertical-align: middle;
-        }
-        li span {
-            margin-left: 0.5em;
-            font-size: 0.8em;
-            color: slategray;
-        }
-        h1 {
-            text-align: center;
-            font-size: 1.5em;
-        }
-        label {
-            font-size: 1.2em;
-        }
-        @media only screen and (max-width: 480px) {
-        label {
-            font-size: 0.9em;
-        }
-        }
-        .textbox {
-            margin-bottom: 0.5em;
-            line-height: 1em;
-            padding: 0.2em;
-            box-sizing: border-box; 
-        }
-        .textbox-size {
-            width: 480px;
-            font-size: 1.5em;
-        }
-        @media only screen and (max-width: 480px) {
-        .textbox-size {
-            width: 100%;
-            font-size: 1.2em;
-        }
-        }
-        .disabled {
-            background-color: lightgray;
-            border: none;
-        }
-        .checkbox input {
-            margin: 0.5em auto;
-            border-radius: 5px;
-            height: 1.2em;
-            width: 1.2em;
-        }
-        .checkbox label {
-            margin-left: 0.5em;
-            display: inline;
-        }
-        @media only screen and (max-width: 480px) {
-            .checkbox span {
-                display: block;
-            }
-        }
-        .button {
-            float: right;
-            margin-top: 1em;
-        }
-        .button-link {
-            background-color: transparent;
-            text-decoration: underline;
-            border: none;
-            cursor: pointer;
-        }        
-        .button input, .button a {
-            -webkit-appearance: none;
-            display: block;
-            padding: 0.5em;
-            background-color: black;
-            text-decoration: none;
-            color: white;
-            border: none;
-            border-radius: 0;
-        }
-        .button-size input, .button-size a {
-            font-size: 1.2em;
-        }
-        @media only screen and (max-width: 480px) {
-        .button-size input, .button-size a {
-            font-size: 1em;
-        }
-        }
-        .error {
-            margin-bottom: 1em;
-            color: darkred;
-        }
+    }
     </style>
 </head>
 <body>
+    <div class="blur"></div>
     <form method="POST">
-        <ul>
-            <li>
-                <h1>{{ .Title }}</h1>
-            </li>
-            <li>
-                <label for="cbid">Common Browser Id</label>
-                <input style="display: none;" type="submit" value="Update"/>
-                <input style="float:right" class="button-link" type="submit" value="Reset" name="reset-cbid"/>    
-            </li>
-            <li>
-                <input class="textbox disabled textbox-size" type="text" id="cbid" name="cbid" value="{{ .CBID }}" readonly/>
-            </li>
-            <li>
-                <label for="email">Email</label>
-            </li>
-            <li>
-                <input class="textbox textbox-size" type="text" id="email" name="email" value="{{ .Email }}"/>
-            </li>
-            <li>
-                <div class="checkbox">
-                    <input type="checkbox" id="allow" name="allow" {{ if eq .Allow "on" }} checked {{ end }}/>
-                    <label for="allow">Personalize marketing</label>
+        <div class="modal" style="display: block" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h5 class="modal-title">{{ .Title }}</h5>
+                    <button type="submit" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
                 </div>
-            </li>
-            <li>
-                <div class="button button-size">
-                    <input type="submit" value="Update"/>
+                <div class="modal-body">
+                    <div class="pt-3 pb-3">
+                        <div class="form-group">
+                            <label for="cbid">Common Browser ID (CBID)</label>
+                            <input class="button-link reset" type="submit" value="Reset" name="reset-cbid"/>
+                            <input type="text" class="form-control" id="cbid" name="cbid" value="{{ .CBID }}" readonly>
+                            <small id="cbidHelp" class="form-text text-muted">Prevents fraud and funds the free Open Web. Never used for personalized marketing without your consent.</small>
+                        </div>
+                        <div class="form-group form-check">
+                            <input type="checkbox" class="form-check-input" id="allow" name="allow" {{ if eq .Allow "on" }} checked {{ end }}>
+                            <label class="form-check-label small" for="allow">Personalize Marketing</label>
+                        </div>
+                        <hr/>
+                        <div class="form-group">
+                            <label for="email">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="Optional email" value="{{ .Email }}">
+                            <small id="emailHelp" class="form-text text-muted">Your email address never leaves SWAN.</small>
+                        </div>
+                    </div>        
                 </div>
-                <div class="button button-size" style="float: left;">
-                    <input style="background-color: grey;" type="submit" value="Reset" name="reset-all"/>
-                </div>            
-            </li>
-        </ul>
+                <div class="modal-footer">
+                    <button type="submit" class="w-75 mx-auto btn btn-primary text-center">Update</button>
+                </div>
+            </div>
+        </div>
     </form>
 </body>
 </html>`)

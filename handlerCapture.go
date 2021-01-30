@@ -36,6 +36,13 @@ func (m *model) CBID() string            { return m.Get("cbid") }
 func (m *model) Email() string           { return m.Get("email") }
 func (m *model) Allow() string           { return m.Get("allow") }
 func (m *model) BackgroundColor() string { return m.Get("backgroundColor") }
+func (m *model) PublisherHost() string {
+	u, _ := url.Parse(m.Get("returnUrl"))
+	if u != nil {
+		return u.Host
+	}
+	return ""
+}
 
 func handlerCapture(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
