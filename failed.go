@@ -22,78 +22,79 @@ import (
 	"owid"
 )
 
-// Bid contains the information about the advert to be displayed.
-type Bid struct {
+// Failed contains details about the request that was not signed by the
+// recipient.
+type Failed struct {
 	base
-	MediaURL      string // The URL of the content of the advert provided in response
-	AdvertiserURL string // The URL to direct the browser to if the advert is selected
+	Host  string // The domain that did not respond.
+	Error string // The error message to add to the tree.
 }
 
-// BidFromOWID returns a Bid created from the OWID payload.
-func BidFromOWID(i *owid.OWID) (*Bid, error) {
-	var b Bid
+// FailedFromOWID returns a Failed created from the OWID payload.
+func FailedFromOWID(i *owid.OWID) (*Failed, error) {
+	var n Failed
 	f := bytes.NewBuffer(i.Payload)
-	err := b.setFromBuffer(f)
+	err := n.setFromBuffer(f)
 	if err != nil {
 		return nil, err
 	}
-	return &b, nil
+	return &n, nil
 }
 
-// AsByteArray returns the Offer as a byte array.
-func (b *Bid) AsByteArray() ([]byte, error) {
+// AsByteArray returns the Failed as a byte array.
+func (n *Failed) AsByteArray() ([]byte, error) {
 	var f bytes.Buffer
-	b.writeToBuffer(&f)
+	n.writeToBuffer(&f)
 	return f.Bytes(), nil
 }
 
-func (b *Bid) writeToBuffer(f *bytes.Buffer) error {
-	b.version = typeVersion
-	b.structType = typeBid
-	err := b.base.writeToBuffer(f)
+func (n *Failed) writeToBuffer(f *bytes.Buffer) error {
+	n.version = typeVersion
+	n.structType = typeFailed
+	err := n.base.writeToBuffer(f)
 	if err != nil {
 		return err
 	}
-	err = writeString(f, b.MediaURL)
+	err = writeString(f, n.Host)
 	if err != nil {
 		return err
 	}
-	err = writeString(f, b.AdvertiserURL)
+	err = writeString(f, n.Error)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *Bid) setFromBuffer(f *bytes.Buffer) error {
-	err := b.base.setFromBuffer(f)
+func (n *Failed) setFromBuffer(f *bytes.Buffer) error {
+	err := n.base.setFromBuffer(f)
 	if err != nil {
 		return err
 	}
-	if b.structType != typeBid {
+	if n.structType != typeFailed {
 		return fmt.Errorf(
 			"Type %s not valid for %s",
-			typeAsString(b.structType),
-			typeAsString(typeBid))
+			typeAsString(n.structType),
+			typeAsString(typeFailed))
 	}
-	switch b.base.version {
+	switch n.base.version {
 	case byte(1):
-		err = b.setFromBufferVersion1(f)
+		err = n.setFromBufferVersion1(f)
 		break
 	default:
-		err = fmt.Errorf("Version '%d' not supported", b.base.version)
+		err = fmt.Errorf("Version '%d' not supported", n.base.version)
 		break
 	}
 	return err
 }
 
-func (b *Bid) setFromBufferVersion1(f *bytes.Buffer) error {
+func (n *Failed) setFromBufferVersion1(f *bytes.Buffer) error {
 	var err error
-	b.MediaURL, err = readString(f)
+	n.Host, err = readString(f)
 	if err != nil {
 		return err
 	}
-	b.AdvertiserURL, err = readString(f)
+	n.Error, err = readString(f)
 	if err != nil {
 		return err
 	}

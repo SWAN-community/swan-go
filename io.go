@@ -22,6 +22,18 @@ import (
 	"fmt"
 )
 
+func readByte(b *bytes.Buffer) (byte, error) {
+	d := b.Next(1)
+	if len(d) != 1 {
+		return 0, fmt.Errorf("'%d' bytes incorrect for Byte", len(d))
+	}
+	return d[0], nil
+}
+
+func writeByte(b *bytes.Buffer, i byte) error {
+	return b.WriteByte(i)
+}
+
 func readUint32(b *bytes.Buffer) (uint32, error) {
 	d := b.Next(4)
 	if len(d) != 4 {

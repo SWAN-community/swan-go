@@ -165,6 +165,7 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 
 	// Create the offer byte array.
 	return &Offer{
+		base{typeVersion, typeOffer},
 		pl,
 		pu,
 		uuid,

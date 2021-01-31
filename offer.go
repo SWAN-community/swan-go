@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"fmt"
 	"owid"
 )
 
@@ -25,6 +26,7 @@ import (
 // opportunity to advertise with a publisher. It is created by the SWAN host
 // as an OWID and as such is signed by the SWAN host and not the publisher.
 type Offer struct {
+	base
 	Placement   string // A value assigned by the publisher for the advertisement slot on the web page
 	PubDomain   string // The domain that the advertisement slot will appear on
 	UUID        []byte // A unique identifier for this offer
@@ -51,57 +53,86 @@ func (o *Offer) AsByteArray() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (o *Offer) writeToBuffer(b *bytes.Buffer) error {
-	err := writeString(b, o.Placement)
+func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
+	o.base.version = typeVersion
+	o.base.structType = typeOffer
+	err := o.base.writeToBuffer(f)
 	if err != nil {
 		return err
 	}
-	err = writeString(b, o.PubDomain)
+	err = writeString(f, o.Placement)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(b, o.UUID)
+	err = writeString(f, o.PubDomain)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(b, o.CBID)
+	err = writeByteArray(f, o.UUID)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(b, o.SID)
+	err = writeByteArray(f, o.CBID)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(b, o.Preferences)
+	err = writeByteArray(f, o.SID)
+	if err != nil {
+		return err
+	}
+	err = writeByteArray(f, o.Preferences)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *Offer) setFromBuffer(b *bytes.Buffer) error {
+func (o *Offer) setFromBuffer(f *bytes.Buffer) error {
 	var err error
-	o.Placement, err = readString(b)
+	err = o.base.setFromBuffer(f)
 	if err != nil {
 		return err
 	}
-	o.PubDomain, err = readString(b)
+	if o.structType != typeOffer {
+		return fmt.Errorf(
+			"Type %s not valid for %s",
+			typeAsString(o.structType),
+			typeAsString(typeOffer))
+	}
+	switch o.base.version {
+	case byte(1):
+		err = o.setFromBufferVersion1(f)
+		break
+	default:
+		err = fmt.Errorf("Version '%d' not supported", o.base.version)
+		break
+	}
+	return nil
+}
+
+func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
+	var err error
+	o.Placement, err = readString(f)
 	if err != nil {
 		return err
 	}
-	o.UUID, err = readByteArray(b)
+	o.PubDomain, err = readString(f)
 	if err != nil {
 		return err
 	}
-	o.CBID, err = readByteArray(b)
+	o.UUID, err = readByteArray(f)
 	if err != nil {
 		return err
 	}
-	o.SID, err = readByteArray(b)
+	o.CBID, err = readByteArray(f)
 	if err != nil {
 		return err
 	}
-	o.Preferences, err = readByteArray(b)
+	o.SID, err = readByteArray(f)
+	if err != nil {
+		return err
+	}
+	o.Preferences, err = readByteArray(f)
 	if err != nil {
 		return err
 	}
