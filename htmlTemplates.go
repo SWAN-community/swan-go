@@ -95,21 +95,30 @@ var captureTemplate = newHTMLTemplate("capture", `
                 </div>
                 <div class="modal-body">
                     <div class="pt-3 pb-3">
-                        <div class="form-group">
+                        <div class="form-group mb-6">
                             <label for="cbid">Common Browser ID (CBID)</label>
                             <input class="button-link reset" type="submit" value="Reset" name="reset-cbid"/>
                             <input type="text" class="form-control" id="cbid" name="cbid" value="{{ .CBID }}" readonly>
-                            <small id="cbidHelp" class="form-text text-muted">Prevents fraud and funds the free Open Web. Never used for personalized marketing without your consent.</small>
+                            <small id="cbidHelp" class="form-text text-muted">
+                                This ID enables your ad-funded access to the Open Web. You can reset it at any time. Recipients promise not to use for personalized marketing or associate this with your identity without consent.
+                            </small>
                         </div>
-                        <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="allow" name="allow" {{ if eq .Allow "on" }} checked {{ end }}>
+                        <div class="form-group form-check mb-6 pl-2 py-4 bg-light">
+                            <div>
+                            <input type="checkbox" id="allow" name="allow" {{ if eq .Allow "on" }} checked {{ end }}>
                             <label class="form-check-label small" for="allow">Personalize Marketing</label>
+                            <small id="allowHelp" class="form-text text-muted">
+                                Tick to receive fewer more personalised adverts on this device.
+                            </small>
+                            </div>
                         </div>
-                        <hr/>
                         <div class="form-group">
-                            <label for="email">Email address</label>
+                            <label for="email">Email address (optional)</label>
                             <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="Optional email" value="{{ .Email }}">
-                            <small id="emailHelp" class="form-text text-muted">Your email address never leaves SWAN.</small>
+                            <small id="emailHelp" class="form-text text-muted">
+                                Advertisers, publishers and their partners will receive only an encrypted version of your email.
+                                If you provide an email, and consent to personalised marketing, advertisers will try and show you fewer more personalized adverts across all your devices. 
+                            </small>
                         </div>
                     </div>        
                 </div>
