@@ -115,14 +115,15 @@ func removeHTMLWhiteSpace(h string) string {
 	var sb strings.Builder
 	for i, r := range h {
 
-		// Only write out runes that are not control characters.
-		if r != '\r' && r != '\n' && r != '\t' {
-
-			// Only write this rune if the rune is not a space, or if it is a
-			// space the preceding rune is not a space.
-			if i == 0 || r != ' ' || h[i-1] != ' ' {
-				sb.WriteRune(r)
-			}
+		// Treat non-space whitespace characters the same as a space.
+		if r == '\r' || r == '\n' || r == '\t' {
+			r = ' '
+		}
+		
+		// Only write this rune if the rune is not a space, or if it is a
+		// space the preceding rune is not a space.
+		if i == 0 || r != ' ' || h[i-1] != ' ' {
+			sb.WriteRune(r)
 		}
 	}
 	return sb.String()
