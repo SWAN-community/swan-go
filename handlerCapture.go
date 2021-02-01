@@ -18,6 +18,7 @@ package swan
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strings"
@@ -44,7 +45,9 @@ func (m *model) PublisherHost() string {
 	return ""
 }
 
-func handlerCapture(s *services) http.HandlerFunc {
+func handlerCapture(s *services, h string) (http.HandlerFunc, error) {
+	t := template.Must(template.New("capture").Parse(
+		removeHTMLWhiteSpace(h)))
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the model from the URL.
@@ -86,21 +89,22 @@ func handlerCapture(s *services) http.HandlerFunc {
 		// Respond based on the method used.
 		switch r.Method {
 		case "GET":
-			handlerCaptureGet(s, w, r, &m)
+			handlerCaptureGet(s, w, r, &m, t)
 		case "POST":
-			handlerCapturePost(s, w, r, &m)
+			handlerCapturePost(s, w, r, &m, t)
 		}
-	}
+	}, nil
 }
 
 func handlerCaptureGet(
 	s *services,
 	w http.ResponseWriter,
 	r *http.Request,
-	m *model) {
+	m *model,
+	t *template.Template) {
 
 	// Display the user interface with the data provided.
-	err := captureTemplate.Execute(w, m)
+	err := t.Execute(w, m)
 	if err != nil {
 		returnServerError(&s.config, w, err)
 		return
@@ -111,7 +115,8 @@ func handlerCapturePost(
 	s *services,
 	w http.ResponseWriter,
 	r *http.Request,
-	m *model) {
+	m *model,
+	t *template.Template) {
 
 	// Get the data provided in the post back.
 	err := r.ParseForm()
@@ -132,7 +137,7 @@ func handlerCapturePost(
 		m.Set("cbid", uuid.New().String())
 
 		// Display the template again.
-		err = captureTemplate.Execute(w, &m)
+		err = t.Execute(w, &m)
 		if err != nil {
 			returnServerError(&s.config, w, err)
 		}
@@ -148,7 +153,7 @@ func handlerCapturePost(
 		m.Set("cbid", uuid.New().String())
 
 		// Display the template again.
-		err = captureTemplate.Execute(w, &m)
+		err = t.Execute(w, &m)
 		if err != nil {
 			returnServerError(&s.config, w, err)
 		}
@@ -159,22 +164,40 @@ func handlerCapturePost(
 	u, err := createStorageOperationURL(s, &m.Values,
 		func(q *url.Values) {
 
-			// Add any parameters from the form being posted back with a common
-			// date for expiry in 3 months.
+			// Add the HTTP headers that will impact the home node calculation.
+			swift.SetHomeNodeHeaders(r, q)
+
+			// Add any parameters from the form being posted back with a
+			// common date for expiry in 3 months.
 			t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
 
-			// Add the Common Browser ID replacing any existing values if
-			// present in the network.
-			q.Set(fmt.Sprintf("cbid>%s", t), r.PostForm.Get("cbid"))
+			// Check to see if the post is a close indicating no data should be
+			// updated.
+			if r.Form.Get("close") == "" {
 
-			// Add the email so that it can verified as some time in the future
-			// if necessary by the SWAN provider.
-			q.Set(fmt.Sprintf("email>%s", t), r.PostForm.Get("email"))
+				// Add the Common Browser ID replacing any existing values if
+				// present in the network.
+				q.Set(fmt.Sprintf("cbid>%s", t), r.PostForm.Get("cbid"))
 
-			if r.PostForm.Get("allow") == "" {
-				q.Set(fmt.Sprintf("allow>%s", t), "off")
+				// Add the email so that it can verified at some time in the
+				// future if necessary by the SWAN provider.
+				q.Set(fmt.Sprintf("email>%s", t), r.PostForm.Get("email"))
+
+				if r.PostForm.Get("allow") == "" {
+					q.Set(fmt.Sprintf("allow>%s", t), "off")
+				} else {
+					q.Set(fmt.Sprintf("allow>%s", t), r.PostForm.Get("allow"))
+				}
+
 			} else {
-				q.Set(fmt.Sprintf("allow>%s", t), r.PostForm.Get("allow"))
+
+				// As no update is happening the SWIFT operation must favour
+				// values that were written prior to the current time. If they
+				// are not present then the values passed to the form will be
+				// used.
+				q.Set(fmt.Sprintf("cbid<%s", t), q.Get("cbid"))
+				q.Set(fmt.Sprintf("email<%s", t), q.Get("email"))
+				q.Set(fmt.Sprintf("allow<%s", t), q.Get("allow"))
 			}
 
 			// Delete the keys that were provided from the publisher so that the

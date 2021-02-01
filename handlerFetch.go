@@ -102,10 +102,9 @@ func createStorageOperationURL(
 	}
 
 	// Build a new URL to request the first storage operation URL.
-	u, err := url.Parse(s.config.Scheme + "://" + s.accessNode)
-	if err != nil {
-		return "", err
-	}
+	var u url.URL
+	u.Scheme = s.config.Scheme
+	u.Host = s.accessNode
 	u.Path = "/swift/api/v1/create"
 
 	// Use the function passed to the method to add any additional query

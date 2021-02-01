@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"owid"
+	"strings"
 	"swift"
 )
 
@@ -31,7 +32,8 @@ func AddHandlers(
 	swanAccess Access,
 	swiftAccess swift.Access,
 	owidAccess owid.Access,
-	malformedHandler func(w http.ResponseWriter, r *http.Request)) {
+	htmlTemplate string,
+	malformedHandler func(w http.ResponseWriter, r *http.Request)) error {
 
 	// Create the new set of services.
 	s := newServices(settingsFile, swanAccess, swiftAccess, owidAccess)
@@ -47,7 +49,12 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/decode-as-json", handlerDecodeAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
-	http.HandleFunc("/swan/preferences/", handlerCapture(s))
+	h, err := handlerCapture(s, htmlTemplate)
+	if err != nil {
+		return err
+	}
+	http.HandleFunc("/swan/preferences/", h)
+	return nil
 }
 
 func newResponseError(url string, resp *http.Response) error {
@@ -100,4 +107,23 @@ func returnServerError(c *Configuration, w http.ResponseWriter, err error) {
 	if c.Debug {
 		println(err.Error())
 	}
+}
+
+// Removes white space from the HTML string provided whilst retaining valid
+// HTML.
+func removeHTMLWhiteSpace(h string) string {
+	var sb strings.Builder
+	for i, r := range h {
+
+		// Only write out runes that are not control characters.
+		if r != '\r' && r != '\n' && r != '\t' {
+
+			// Only write this rune if the rune is not a space, or if it is a
+			// space the preceding rune is not a space.
+			if i == 0 || r != ' ' || h[i-1] != ' ' {
+				sb.WriteRune(r)
+			}
+		}
+	}
+	return sb.String()
 }
