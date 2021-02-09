@@ -51,14 +51,14 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 		// Decrypt the string with the access node.
 		in, err := decrypt(s, r.Form.Get("data"))
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
 		// Get the results.
 		results, err = swift.DecodeResults(in)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -83,7 +83,7 @@ func handlerDecodeAsJSON(s *services) http.HandlerFunc {
 
 		// Return the results as a JSON string.
 		if err := json.NewEncoder(w).Encode(results.Values); err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func decrypt(s *services, d string) ([]byte, error) {
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, newResponseError(u.String(), res)
+		return nil, newResponseError(&s.config, res)
 	}
 	return ioutil.ReadAll(res.Body)
 }

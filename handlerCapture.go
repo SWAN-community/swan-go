@@ -121,7 +121,7 @@ func handlerCapturePost(
 	// Get the data provided in the post back.
 	err := r.ParseForm()
 	if err != nil {
-		returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+		returnAPIError(&s.config, w, err, http.StatusBadRequest)
 		return
 	}
 

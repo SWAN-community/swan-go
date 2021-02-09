@@ -72,7 +72,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 					s.config.Scheme+"://"+r.Host+"/swan/preferences/")
 			})
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusUnprocessableEntity)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 

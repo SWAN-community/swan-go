@@ -57,13 +57,21 @@ func AddHandlers(
 	return nil
 }
 
-func newResponseError(url string, resp *http.Response) error {
-	in, err := ioutil.ReadAll(resp.Body)
+func newResponseError(c *Configuration, r *http.Response) error {
+	in, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
+	var u string
+	if c.Debug {
+		u = r.Request.URL.String()
+	} else {
+		u = r.Request.Host
+	}
 	return fmt.Errorf("API call '%s' returned '%d' and '%s'",
-		url, resp.StatusCode, in)
+		u,
+		r.StatusCode,
+		strings.TrimSpace(string(in)))
 }
 
 func returnAPIError(
@@ -119,7 +127,7 @@ func removeHTMLWhiteSpace(h string) string {
 		if r == '\r' || r == '\n' || r == '\t' {
 			r = ' '
 		}
-		
+
 		// Only write this rune if the rune is not a space, or if it is a
 		// space the preceding rune is not a space.
 		if i == 0 || r != ' ' || h[i-1] != ' ' {
