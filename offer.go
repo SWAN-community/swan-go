@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"owid"
 )
@@ -33,6 +34,21 @@ type Offer struct {
 	CBID        []byte // The Commmon Browser ID (not the OWID version)
 	SID         []byte // The Signed In ID (not the OWID version)
 	Preferences []byte // The privacy preferences string (not the OWID version)
+}
+
+// CBIDAsString as a base 64 string.
+func (o *Offer) CBIDAsString() string {
+	return base64.StdEncoding.EncodeToString(o.CBID)
+}
+
+// SIDAsString as a base 64 string.
+func (o *Offer) SIDAsString() string {
+	return base64.StdEncoding.EncodeToString(o.SID)
+}
+
+// PreferencesAsString as a base 64 string.
+func (o *Offer) PreferencesAsString() string {
+	return string(o.Preferences)
 }
 
 // OfferFromOWID returns an Offer created from the OWID payload.

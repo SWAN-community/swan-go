@@ -45,6 +45,7 @@ func AddHandlers(
 	owid.AddHandlers(s.owid)
 
 	// Add the SWAN handlers.
+	http.HandleFunc("/swan/api/v1/complaint-email", handlerComplaintEmail(s))
 	http.HandleFunc("/swan/api/v1/fetch", handlerFetch(s))
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/decode-as-json", handlerDecodeAsJSON(s))
