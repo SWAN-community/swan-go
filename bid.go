@@ -40,6 +40,21 @@ func BidFromOWID(i *owid.OWID) (*Bid, error) {
 	return &b, nil
 }
 
+// BidFromNode returns a Bid created from the Node payload.
+func BidFromNode(n *owid.Node) (*Bid, error) {
+	var b Bid
+	o, err := n.GetOWID()
+	if err != nil {
+		return nil, err
+	}
+	f := bytes.NewBuffer(o.Payload)
+	err = b.setFromBuffer(f)
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
 // AsByteArray returns the Offer as a byte array.
 func (b *Bid) AsByteArray() ([]byte, error) {
 	var f bytes.Buffer

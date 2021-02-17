@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"owid"
+	"strings"
 )
 
 // Offer (aka Transaction ID or Bid ID) contains the information about the
@@ -34,6 +35,7 @@ type Offer struct {
 	CBID        []byte // The Commmon Browser ID (not the OWID version)
 	SID         []byte // The Signed In ID (not the OWID version)
 	Preferences []byte // The privacy preferences string (not the OWID version)
+	Stopped     []byte // List of domains that adverts should not be shown from
 }
 
 // CBIDAsString as a base 64 string.
@@ -51,11 +53,42 @@ func (o *Offer) PreferencesAsString() string {
 	return string(o.Preferences)
 }
 
+// StoppedAsArray returns an array of domains that should not be included in
+// bids.
+func (o *Offer) StoppedAsArray() []string {
+	return strings.Split(string(o.Stopped), "\r\n")
+}
+
+// IsStopped returns true if the URL provided is stopped.
+func (o *Offer) IsStopped(u string) bool {
+	for _, i := range o.StoppedAsArray() {
+		if strings.EqualFold(u, i) {
+			return true
+		}
+	}
+	return false
+}
+
 // OfferFromOWID returns an Offer created from the OWID payload.
 func OfferFromOWID(i *owid.OWID) (*Offer, error) {
 	var o Offer
 	buf := bytes.NewBuffer(i.Payload)
 	err := o.setFromBuffer(buf)
+	if err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+// OfferFromNode returns an Offer created from the Node payload.
+func OfferFromNode(n *owid.Node) (*Offer, error) {
+	var o Offer
+	w, err := n.GetOWID()
+	if err != nil {
+		return nil, err
+	}
+	f := bytes.NewBuffer(w.Payload)
+	err = o.setFromBuffer(f)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +130,10 @@ func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
 		return err
 	}
 	err = writeByteArray(f, o.Preferences)
+	if err != nil {
+		return err
+	}
+	err = writeByteArray(f, o.Stopped)
 	if err != nil {
 		return err
 	}
@@ -149,6 +186,10 @@ func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
 		return err
 	}
 	o.Preferences, err = readByteArray(f)
+	if err != nil {
+		return err
+	}
+	o.Stopped, err = readByteArray(f)
 	if err != nil {
 		return err
 	}

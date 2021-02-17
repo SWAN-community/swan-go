@@ -32,8 +32,8 @@ var complaintSubjectTemplate = newComplaintTemplate(
 var complaintBodyTemplate = newComplaintTemplate("body", `
 To whom it may concern,
 
-I believe that "{{ .Organization }}" used my personal information without my
-consent on '{{ .Date }}'. 
+I believe that "{{ .Organization }}" used my personal information without a 
+legal basis on '{{ .Date }}'. 
 
 	Common Browser Identifier:	{{ .CBID }}
 	Signed in Identifier:		{{ .SID }}
@@ -45,13 +45,13 @@ I provided you the following permissions for use of this data.
 You cryptographically signed this information. We therefore agree that you were
 in posession of the information.
 
-As an organization operating in '{{ .Country }}' you are bound by the rules 
-described at the following web address. 
+As an organization operating in '{{ .Country }}' you are bound by the following 
+rules.
 
 	{{ .DataProtectionURL }}
 
 I would be grateful if you can respond by email to this address within 7 
-working days after which I will forward this email to the regulator.
+working days.
 
 Regards,
 

@@ -19,15 +19,12 @@ package swan
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/google/uuid"
 )
 
-func handlerFetch(s *services) http.HandlerFunc {
+func handlerStop(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check caller can access.
@@ -42,6 +39,16 @@ func handlerFetch(s *services) http.HandlerFunc {
 		err := r.ParseForm()
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Validate the stopped parameter is present.
+		if r.Form.Get("host") == "" {
+			returnAPIError(
+				&s.config,
+				w,
+				fmt.Errorf("'host' must be provided"),
+				http.StatusBadRequest)
 			return
 		}
 
@@ -61,10 +68,8 @@ func handlerFetch(s *services) http.HandlerFunc {
 			&q,
 			func(q *url.Values) {
 				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
-				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
-				q.Set(fmt.Sprintf("email<%s", t), "")
-				q.Set(fmt.Sprintf("allow<%s", t), "")
-				q.Set(fmt.Sprintf("stop<%s", t), "")
+				q.Set(fmt.Sprintf("stop+%s", t), q.Get("host"))
+				q.Del("host")
 			})
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
@@ -82,57 +87,4 @@ func handlerFetch(s *services) http.HandlerFunc {
 			return
 		}
 	}
-}
-
-func createStorageOperationURL(
-	s *services,
-	q *url.Values,
-	fn func(q *url.Values)) (string, error) {
-
-	// Check that an access node exists for SWAN. If not try to update the
-	// access node before erroring.
-	if s.accessNode == "" {
-		an, err := s.swift.GetAccessNode(s.config.Network)
-		if err != nil && an == "" {
-			return "", fmt.Errorf("An access node has not been created for the"+
-				" '%s' network. Use http[s]://[domain]/swift/register to start"+
-				" the network.",
-				s.config.Network)
-		}
-		s.accessNode = an
-	}
-
-	// Build a new URL to request the first storage operation URL.
-	var u url.URL
-	u.Scheme = s.config.Scheme
-	u.Host = s.accessNode
-	u.Path = "/swift/api/v1/create"
-
-	// Use the function passed to the method to add any additional query
-	// parameters.
-	fn(q)
-
-	// Set the table to SWAN.
-	q.Set("table", "swan")
-
-	// Copy the query string parameters exactly from those provided by the
-	// publisher.
-	u.RawQuery = q.Encode()
-
-	// Get the first storage URL from the access node.
-	res, err := http.Get(u.String())
-	if err != nil {
-		return "", err
-	}
-	if res.StatusCode != http.StatusOK {
-		return "", newResponseError(&s.config, res)
-	}
-
-	// Read the response as a string.
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
 }

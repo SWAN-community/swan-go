@@ -156,6 +156,11 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		return nil, err
 	}
 
+	stopped, err := getOWID(s, r, "stopped")
+	if err != nil {
+		return nil, err
+	}
+
 	// Random one time data is used to ensure the Offer ID is unique for all
 	// time.
 	uuid, err := uuid.New().MarshalBinary()
@@ -171,5 +176,6 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		uuid,
 		cbid.Payload,
 		sid.Payload,
-		pref.Payload}, nil
+		pref.Payload,
+		stopped.Payload}, nil
 }
