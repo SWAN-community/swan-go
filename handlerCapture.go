@@ -28,16 +28,16 @@ import (
 	"github.com/google/uuid"
 )
 
-type model struct {
+type captureModel struct {
 	url.Values
 }
 
-func (m *model) Title() string           { return m.Get("title") }
-func (m *model) CBID() string            { return m.Get("cbid") }
-func (m *model) Email() string           { return m.Get("email") }
-func (m *model) Allow() string           { return m.Get("allow") }
-func (m *model) BackgroundColor() string { return m.Get("backgroundColor") }
-func (m *model) PublisherHost() string {
+func (m *captureModel) Title() string           { return m.Get("title") }
+func (m *captureModel) CBID() string            { return m.Get("cbid") }
+func (m *captureModel) Email() string           { return m.Get("email") }
+func (m *captureModel) Allow() string           { return m.Get("allow") }
+func (m *captureModel) BackgroundColor() string { return m.Get("backgroundColor") }
+func (m *captureModel) PublisherHost() string {
 	u, _ := url.Parse(m.Get("returnUrl"))
 	if u != nil {
 		return u.Host
@@ -51,7 +51,7 @@ func handlerCapture(s *services, h string) (http.HandlerFunc, error) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the model from the URL.
-		var m model
+		var m captureModel
 		m.Values = make(url.Values)
 
 		// The last path segment is the data.
@@ -100,7 +100,7 @@ func handlerCaptureGet(
 	s *services,
 	w http.ResponseWriter,
 	r *http.Request,
-	m *model,
+	m *captureModel,
 	t *template.Template) {
 
 	// Display the user interface with the data provided.
@@ -115,7 +115,7 @@ func handlerCapturePost(
 	s *services,
 	w http.ResponseWriter,
 	r *http.Request,
-	m *model,
+	m *captureModel,
 	t *template.Template) {
 
 	// Get the data provided in the post back.

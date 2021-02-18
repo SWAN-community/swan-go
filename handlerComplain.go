@@ -48,7 +48,7 @@ in posession of the information.
 As an organization operating in '{{ .Country }}' you are bound by the following 
 rules.
 
-	{{ .DataProtectionURL }}
+	{{ .DPRURL }}
 
 I would be grateful if you can respond by email to this address within 7 
 working days.
@@ -63,12 +63,12 @@ Regards,
 
 // Complaint used to format an email template.
 type Complaint struct {
-	Offer             *Offer // The offer that the complaint relates to
-	DataProtectionURL string
-	Organization      string
-	Country           string
-	offerID           *owid.OWID
-	swanOWID          *owid.OWID
+	Offer        *Offer // The offer that the complaint relates to
+	DPRURL       string
+	Organization string
+	Country      string
+	offerID      *owid.OWID
+	swanOWID     *owid.OWID
 }
 
 // Date to use in the email template.
@@ -110,14 +110,15 @@ func newComplaintTemplate(n string, b string) *template.Template {
 }
 
 func newComplaint(
+	cfg *Configuration,
 	offerID *owid.OWID,
 	swanID *owid.OWID) (*Complaint, error) {
 	var err error
 
-	// Set the static information associated with the complaint.
+	// Set the static information associated with the complaint. These are
 	var c Complaint
-	c.DataProtectionURL = "https://ico.org.uk/make-a-complaint/your-personal-information-concerns/"
-	c.Country = "Europe"
+	c.DPRURL = cfg.DPRURL
+	c.Country = cfg.Region
 
 	// Work out the offer ID from the OWID provided.
 	c.Offer, err = OfferFromOWID(offerID)
@@ -185,7 +186,7 @@ func handlerComplaintEmail(s *services) http.HandlerFunc {
 		}
 
 		// Create the complaint object.
-		c, err := newComplaint(offerID, swanOWID)
+		c, err := newComplaint(&s.config, offerID, swanOWID)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return

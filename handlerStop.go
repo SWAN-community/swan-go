@@ -17,7 +17,6 @@
 package swan
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -27,14 +26,6 @@ import (
 func handlerStop(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller can access.
-		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
-			return
-		}
-
 		// Get the form values from the input request.
 		err := r.ParseForm()
 		if err != nil {
@@ -42,7 +33,7 @@ func handlerStop(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Validate the stopped parameter is present.
+		// Validate the host parameter is present.
 		if r.Form.Get("host") == "" {
 			returnAPIError(
 				&s.config,
@@ -68,7 +59,11 @@ func handlerStop(s *services) http.HandlerFunc {
 			&q,
 			func(q *url.Values) {
 				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+				q.Set("accessKey", s.config.AccessKey)
 				q.Set(fmt.Sprintf("stop+%s", t), q.Get("host"))
+				q.Set("message", fmt.Sprintf(
+					"Bye, bye %s. Thanks for letting us know.",
+					r.Form.Get("host")))
 				q.Del("host")
 			})
 		if err != nil {
