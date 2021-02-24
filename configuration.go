@@ -30,8 +30,8 @@ type Configuration struct {
 	Network   string        `json:"swanNetwork"`  // The name of the SWIFT network supporting SWAN
 	Timeout   time.Duration `json:"valueTimeout"` // Seconds until the value provided expires and must be revalidated with SWAN
 	AccessKey string        `json:"accessKey"`    // Key to authenticate with the nodes
-	Region    string        `json:region`         // Region that the CMP operates in
-	DPRURL    string        `json:dprurl`         // URL to the data protection regulator
+	Region    string        `json:"region"`       // Region that the CMP operates in
+	DPRURL    string        `json:"dprurl"`       // URL to the data protection regulator
 }
 
 // NewConfig creates a new instance of configuration from the file provided.
