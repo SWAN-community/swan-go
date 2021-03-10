@@ -22,13 +22,10 @@ import (
 	"net/http"
 )
 
-// handlerFetch returns a URL that can be used in the browser primary navigation
-// to retrieve the most current data from the SWAN network. If no data is
-// available default values are returned.
-func handlerFetch(s *services) http.HandlerFunc {
+func handlerDialog(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller is authorized to access SWAN.
+		// Check caller can access
 		if s.getAccessAllowed(w, r) == false {
 			returnAPIError(&s.config, w,
 				errors.New("Not authorized"),
@@ -36,26 +33,33 @@ func handlerFetch(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Validate the set the return URL.
-		err := setURL("returnUrl", "returnUrl", &r.Form)
+		// Take the return URL provided and are this as the state key.
+		err := setURL("returnUrl", "state", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
-		// Set the SWAN fields to empty values that will only be used if no
-		// other value is returned.
+		// Validate that a dialog URL has been provided to display the results
+		// of the request.
+		err = setURL("dialogUrl", "returnUrl", &r.Form)
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+		r.Form.Del("dialogUrl")
+
+		// Create the URL with the parameters provided by the publisher.
 		setDefaults(&r.Form)
 
-		// Uses the SWIFT access node associated with this internet domain
-		// to determine the URL to direct the browser to.
+		// Use SWIFT to create the storage URL to direct the web browser to.
 		u, err := createStorageOperationURL(s.swift, r, r.Form)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
-		// Return the response from the SWIFT layer.
+		// Return the URL as a text string.
 		g := gzip.NewWriter(w)
 		defer g.Close()
 		w.Header().Set("Content-Encoding", "gzip")

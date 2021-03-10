@@ -17,19 +17,21 @@
 package swan
 
 import (
+	"compress/gzip"
+	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
 func handlerStop(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the form values from the input request.
-		err := r.ParseForm()
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		// Check caller is authorized to access SWAN.
+		if s.getAccessAllowed(w, r) == false {
+			returnAPIError(&s.config, w,
+				errors.New("Not authorized"),
+				http.StatusUnauthorized)
 			return
 		}
 
@@ -43,40 +45,34 @@ func handlerStop(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Copy the incoming parameters into the outgoing ones.
-		q, err := url.ParseQuery(r.Form.Encode())
+		// Validate the set the return URL.
+		err := setURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
-		// Validate the common parameters.
-		validateCommon(s, w, r, q)
-
 		// Create the URL with the parameters provided by the publisher.
-		u, err := createStorageOperationURL(
-			s,
-			&q,
-			func(q *url.Values) {
-				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
-				q.Set("accessKey", s.config.AccessKey)
-				q.Set(fmt.Sprintf("stop+%s", t), q.Get("host"))
-				q.Set("message", fmt.Sprintf(
-					"Bye, bye %s. Thanks for letting us know.",
-					r.Form.Get("host")))
-				q.Del("host")
-			})
+		t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+		r.Form.Set("accessKey", s.config.AccessKey)
+		r.Form.Set(fmt.Sprintf("stop+%s", t), r.Form.Get("host"))
+		r.Form.Set("message", fmt.Sprintf(
+			"Bye, bye %s. Thanks for telling the world.",
+			r.Form.Get("host")))
+		r.Form.Del("host")
+		u, err := createStorageOperationURL(s.swift, r, r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return
 		}
 
 		// Return the URL as a text string.
-		b := []byte(u)
+		g := gzip.NewWriter(w)
+		defer g.Close()
+		w.Header().Set("Content-Encoding", "gzip")
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
-		_, err = w.Write(b)
+		_, err = g.Write([]byte(u))
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return

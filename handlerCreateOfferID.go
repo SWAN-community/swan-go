@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,11 +67,13 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
+		g := gzip.NewWriter(w)
+		defer g.Close()
+		w.Header().Set("Content-Encoding", "gzip")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
-		_, err = w.Write(b)
+		_, err = g.Write(b)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return

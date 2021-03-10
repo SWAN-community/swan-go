@@ -30,8 +30,6 @@ type Configuration struct {
 	Network   string        `json:"swanNetwork"`  // The name of the SWIFT network supporting SWAN
 	Timeout   time.Duration `json:"valueTimeout"` // Seconds until the value provided expires and must be revalidated with SWAN
 	AccessKey string        `json:"accessKey"`    // Key to authenticate with the nodes
-	Region    string        `json:"region"`       // Region that the CMP operates in
-	DPRURL    string        `json:"dprurl"`       // URL to the data protection regulator
 }
 
 // NewConfig creates a new instance of configuration from the file provided.
@@ -44,14 +42,5 @@ func newConfig(file string) Configuration {
 	}
 	jsonParser := json.NewDecoder(configFile)
 	jsonParser.Decode(&c)
-
-	// If there are missing values set some default.
-	if c.Region == "" {
-		c.Region = "Europe"
-	}
-	if c.DPRURL == "" {
-		c.DPRURL = "https://ico.org.uk/make-a-complaint/your-personal-information-concerns/"
-	}
-
 	return c
 }

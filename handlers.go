@@ -27,17 +27,16 @@ import (
 
 // AddHandlers adds swift and owid end points configured from the JSON file
 // provided.
+// settingsFile path to the file that contains the configuration settings.
+// swanAccess an authorization instance used to valid requests.
+// malformedHandler if SWAN can't handle the request the handler to use instead.
 func AddHandlers(
 	settingsFile string,
 	swanAccess Access,
-	swiftAccess swift.Access,
-	owidAccess owid.Access,
-	htmlCaptureTemplate string,
-	htmlInfoTemplate string,
 	malformedHandler func(w http.ResponseWriter, r *http.Request)) error {
 
 	// Create the new set of services.
-	s := newServices(settingsFile, swanAccess, swiftAccess, owidAccess)
+	s := newServices(settingsFile, swanAccess)
 
 	// Add the SWIFT handlers.
 	swift.AddHandlers(s.swift, malformedHandler)
@@ -46,22 +45,13 @@ func AddHandlers(
 	owid.AddHandlers(s.owid)
 
 	// Add the SWAN handlers.
-	http.HandleFunc("/swan/api/v1/stop", handlerStop(s))
-	http.HandleFunc("/swan/api/v1/complaint-email", handlerComplaintEmail(s))
 	http.HandleFunc("/swan/api/v1/fetch", handlerFetch(s))
+	http.HandleFunc("/swan/api/v1/dialog", handlerDialog(s))
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
-	http.HandleFunc("/swan/api/v1/decode-as-json", handlerDecodeAsJSON(s))
+	http.HandleFunc("/swan/api/v1/stop", handlerStop(s))
+	http.HandleFunc("/swan/api/v1/values-as-json", handlerValuesAsJSON(s))
+	http.HandleFunc("/swan/api/v1/operation-as-json", handlerOperationAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
-	c, err := handlerCapture(s, htmlCaptureTemplate)
-	if err != nil {
-		return err
-	}
-	http.HandleFunc("/swan/preferences/", c)
-	i, err := handlerInfo(s, htmlInfoTemplate)
-	if err != nil {
-		return err
-	}
-	http.HandleFunc("/swan/info/", i)
 	return nil
 }
 
@@ -123,23 +113,4 @@ func returnServerError(c *Configuration, w http.ResponseWriter, err error) {
 	if c.Debug {
 		println(err.Error())
 	}
-}
-
-// Removes white space from the HTML string provided whilst retaining valid
-// HTML.
-func removeHTMLWhiteSpace(h string) string {
-	var sb strings.Builder
-	for i, r := range h {
-
-		// Only write out runes that are not control characters.
-		if r != '\r' && r != '\n' && r != '\t' {
-
-			// Only write this rune if the rune is not a space, or if it is a
-			// space the preceding rune is not a space.
-			if i == 0 || r != ' ' || h[i-1] != ' ' {
-				sb.WriteRune(r)
-			}
-		}
-	}
-	return sb.String()
 }

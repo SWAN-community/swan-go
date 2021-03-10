@@ -17,19 +17,20 @@
 package swan
 
 import (
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
-
-	"github.com/google/uuid"
 )
 
+// handlerUpdate returns a URL that can be used in the browser primary
+// navigation to update the SWAN network data with the values provided in the
+// form parameters.
 func handlerUpdate(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller can access
+		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
 			returnAPIError(&s.config, w,
 				errors.New("Not authorized"),
@@ -37,79 +38,42 @@ func handlerUpdate(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Get the form values from the input request.
-		err := r.ParseForm()
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
-
-		// Copy the incoming parameters into the outgoing ones.
-		q, err := url.ParseQuery(r.Form.Encode())
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
-
-		// Validate the common parameters.
-		validateCommon(s, w, r, q)
-
-		// Create the URL with the parameters provided by the publisher.
-		u, err := createStorageOperationURL(
-			s,
-			&q,
-			func(q *url.Values) {
-				t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
-				q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
-				q.Set(fmt.Sprintf("email<%s", t), "")
-				q.Set(fmt.Sprintf("allow<%s", t), "")
-
-				// Store the return URL from the publisher in the state for the
-				// the storage operation in SWIFT. Then replace the return URL
-				// with the SWAN preferences page URL.
-				q.Set("state", q.Get("returnUrl"))
-				q.Set("returnUrl",
-					s.config.Scheme+"://"+r.Host+"/swan/preferences/")
-			})
+		// Validate and set the return URL.
+		err := setURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
-		// Return the URL as a text string.
-		b := []byte(u)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
-		_, err = w.Write(b)
+		// Set the SWAN fields to the values provided.
+		t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+		r.Form.Set(fmt.Sprintf("cbid>%s", t), r.Form.Get("cbid"))
+		r.Form.Set(fmt.Sprintf("email>%s", t), r.Form.Get("email"))
+		r.Form.Set(fmt.Sprintf("allow>%s", t), r.Form.Get("allow"))
+		r.Form.Set(fmt.Sprintf("stop<%s", t), "")
+		r.Form.Del("cbid")
+		r.Form.Del("email")
+		r.Form.Del("allow")
+		r.Form.Del("stop")
+
+		// Uses the SWIFT access node associated with this internet domain
+		// to determine the URL to direct the browser to.
+		u, err := createStorageOperationURL(s.swift, r, r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return
 		}
-	}
-}
 
-// validateCommon checks that mandatory fields, or optional fields that have
-// been provided in the API request for update and fetch actions are valid. If
-// they are  not then a bad request message is returned.
-func validateCommon(
-	s *services,
-	w http.ResponseWriter,
-	r *http.Request,
-	q url.Values) {
-	ru, err := url.Parse(q.Get("returnUrl"))
-	if err != nil {
-		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-		return
-	}
-	if ru.Scheme == "" {
-		returnAPIError(&s.config, w,
-			errors.New("returnUrl must include a scheme"),
-			http.StatusBadRequest)
-	}
-	if ru.Host == "" {
-		returnAPIError(&s.config, w,
-			errors.New("returnUrl must include a host"),
-			http.StatusBadRequest)
+		// Return the URL from the SWIFT layer.
+		g := gzip.NewWriter(w)
+		defer g.Close()
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		_, err = g.Write([]byte(u))
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			return
+		}
 	}
 }
