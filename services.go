@@ -128,7 +128,7 @@ func (s *services) getAccessAllowed(
 	v, err := s.access.GetAllowed(r.FormValue("accessKey"))
 	if v == false || err != nil {
 		returnAPIError(&s.config, w,
-			fmt.Errorf("Access denied"),
+			fmt.Errorf("Access denied. Verify parameter accessKey"),
 			http.StatusNetworkAuthenticationRequired)
 		return false
 	}
