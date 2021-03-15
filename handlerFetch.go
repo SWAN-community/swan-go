@@ -27,6 +27,7 @@ import (
 // available default values are returned.
 func handlerFetch(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
 
 		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
@@ -37,7 +38,7 @@ func handlerFetch(s *services) http.HandlerFunc {
 		}
 
 		// Validate the set the return URL.
-		err := setURL("returnUrl", "returnUrl", &r.Form)
+		err = setURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return

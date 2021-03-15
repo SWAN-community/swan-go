@@ -38,15 +38,18 @@ func setURL(s string, d string, q *url.Values) error {
 // encrypted data can be appended to the end of the string as an identifiable
 // segment.
 func validateURL(n string, v string) (*url.URL, error) {
+	if v == "" {
+		return nil, fmt.Errorf("%s must be a valid URL", n)
+	}
 	u, err := url.Parse(v)
 	if err != nil {
 		return nil, err
 	}
 	if u.Scheme == "" {
-		return nil, fmt.Errorf("%s must include a scheme", n)
+		return nil, fmt.Errorf("%s '%s' must include a scheme", n, v)
 	}
 	if u.Host == "" {
-		return nil, fmt.Errorf("%s must include a host", n)
+		return nil, fmt.Errorf("%s '%s' must include a host", n, v)
 	}
 
 	// If the last character of the path is not a forward slash then append one.

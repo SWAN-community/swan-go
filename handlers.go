@@ -46,7 +46,6 @@ func AddHandlers(
 
 	// Add the SWAN handlers.
 	http.HandleFunc("/swan/api/v1/fetch", handlerFetch(s))
-	http.HandleFunc("/swan/api/v1/dialog", handlerDialog(s))
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/stop", handlerStop(s))
 	http.HandleFunc("/swan/api/v1/values-as-json", handlerValuesAsJSON(s))

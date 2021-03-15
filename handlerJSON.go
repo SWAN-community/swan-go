@@ -35,7 +35,7 @@ import (
 func handlerOperationAsJSON(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller can access
+		// Check caller can access.
 		if s.getAccessAllowed(w, r) == false {
 			returnAPIError(&s.config, w,
 				errors.New("Not authorized"),
@@ -53,7 +53,7 @@ func handlerOperationAsJSON(s *services) http.HandlerFunc {
 		// Decrypt the string with the access node.
 		v, err := decryptAndDecode(s.swift, r.Host, d)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -82,7 +82,7 @@ func handlerOperationAsJSON(s *services) http.HandlerFunc {
 func handlerValuesAsJSON(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller can access
+		// Check caller can access.
 		if s.getAccessAllowed(w, r) == false {
 			returnAPIError(&s.config, w,
 				errors.New("Not authorized"),
@@ -100,7 +100,7 @@ func handlerValuesAsJSON(s *services) http.HandlerFunc {
 		// Decrypt the string with the access node.
 		v, err := decryptAndDecode(s.swift, r.Host, d)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 

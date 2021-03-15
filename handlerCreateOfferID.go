@@ -32,7 +32,7 @@ import (
 func handlerCreateOfferID(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check caller can access
+		// Check caller can access.
 		if s.getAccessAllowed(w, r) == false {
 			returnAPIError(&s.config, w,
 				errors.New("Not authorized"),
