@@ -60,7 +60,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		// to determine the URL to direct the browser to.
 		u, err := createStorageOperationURL(s.swift, r, r.Form)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 

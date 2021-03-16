@@ -59,9 +59,12 @@ func handlerStop(s *services) http.HandlerFunc {
 			"Bye, bye %s. Thanks for telling the world.",
 			r.Form.Get("host")))
 		r.Form.Del("host")
+
+		// Uses the SWIFT access node associated with this internet domain
+		// to determine the URL to direct the browser to.
 		u, err := createStorageOperationURL(s.swift, r, r.Form)
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
 
