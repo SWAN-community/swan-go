@@ -18,7 +18,6 @@ package swan
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"owid"
 	"swift"
@@ -33,11 +32,10 @@ var invalidHTTPHeaders = []string{
 
 // Services references all the information needed for every method.
 type services struct {
-	config     Configuration
-	swift      *swift.Services // Services used by the SWIFT network
-	owid       *owid.Services  // Services used for OWID creation and verification
-	accessNode string          // The access node for the SWAN network
-	access     Access          // Instance of access service
+	config Configuration
+	swift  *swift.Services // Services used by the SWIFT network
+	owid   *owid.Services  // Services used for OWID creation and verification
+	access Access          // Instance of access service
 }
 
 // newServices a set of services to use with SWAN. These provide defaults via
@@ -76,21 +74,11 @@ func newServices(settingsFile string, swanAccess Access) *services {
 	// Create the swan configuration.
 	c := newConfig(settingsFile)
 
-	// Get the SWIFT access node for the SWAN network. Log any errors rather
-	// than panic because it may be that a network has yet to be established
-	// for SWAN in the storage tables.
-	an, err := swiftStore.GetAccessNode(c.Network)
-	if err != nil {
-		log.Println(err.Error())
-		log.Printf("Has a '%s' network been created?", c.Network)
-	}
-
 	// Return the services.
 	return &services{
 		c,
 		swift.NewServices(swiftConfig, swiftStore, swanAccess, b),
 		owid.NewServices(owidConfig, owidStore, swanAccess),
-		an,
 		swanAccess}
 }
 
@@ -116,16 +104,35 @@ func (s *services) getAccessAllowed(
 						"publicly available",
 					h),
 				http.StatusNetworkAuthenticationRequired)
+			return false
 		}
 	}
 
-	err := r.ParseForm()
+	// Check that the domain for this request relates to a valid access node.
+	a, err := s.swift.GetAccessNodeForHost(r.Host)
 	if err != nil {
-		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		returnAPIError(
+			&s.config,
+			w,
+			err,
+			http.StatusBadRequest)
+		return false
+	}
+	if a == nil {
+		returnAPIError(
+			&s.config,
+			w,
+			fmt.Errorf("'%s' not a valid SWAN access node", r.Host),
+			http.StatusBadRequest)
 		return false
 	}
 
 	// Validate that the access key provided is valid in the access provider.
+	err = r.ParseForm()
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		return false
+	}
 	v, err := s.access.GetAllowed(r.FormValue("accessKey"))
 	if v == false || err != nil {
 		returnAPIError(&s.config, w,
