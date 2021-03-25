@@ -59,7 +59,7 @@ func handlerOperationAsJSON(s *services) http.HandlerFunc {
 
 		// Modify the expiry time.
 		for _, i := range v.Values {
-			i.Expires = time.Now().UTC().Add(time.Second * s.config.Timeout)
+			i.Expires = time.Now().UTC().Add(time.Second * s.config.ValueTimeout)
 		}
 
 		// Turn the Results into a JSON string.
@@ -130,7 +130,7 @@ func handlerValuesAsJSON(s *services) http.HandlerFunc {
 
 		// Modify the expiry time.
 		for _, i := range v.Values {
-			i.Expires = time.Now().UTC().Add(time.Second * s.config.Timeout)
+			i.Expires = time.Now().UTC().Add(time.Second * s.config.ValueTimeout)
 		}
 
 		// Turn the Results into a JSON string.

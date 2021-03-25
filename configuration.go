@@ -25,9 +25,13 @@ import (
 
 // Configuration maps to the appsettings.json settings file.
 type Configuration struct {
-	Scheme  string        `json:"scheme"` // The scheme to use for requests
-	Debug   bool          `json:"debug"`
-	Timeout time.Duration `json:"valueTimeout"` // Seconds until the value provided expires and must be revalidated with SWAN
+	Scheme string `json:"scheme"` // The scheme to use for requests
+	Debug  bool   `json:"debug"`
+	// Seconds until the value provided expires and must be revalidated
+	ValueTimeout time.Duration `json:"valueTimeout"`
+	// The number of days after which the data will automatically be removed
+	// from SWAN and will need to be provided again by the user.
+	DeleteDays int `json:"deleteDays"`
 }
 
 // NewConfig creates a new instance of configuration from the file provided.
@@ -40,5 +44,17 @@ func newConfig(file string) Configuration {
 	}
 	jsonParser := json.NewDecoder(configFile)
 	jsonParser.Decode(&c)
+
+	// Set defaults if they're not provided in the settings.
+	if c.DeleteDays == 0 {
+		c.DeleteDays = 90
+	}
 	return c
+}
+
+// Gets the delete date for the SWAN data. This is the data after which the
+// date will be removed from the network. Users will have to re-enter the data
+// after this time.
+func (c *Configuration) DeleteDate() time.Time {
+	return time.Now().UTC().AddDate(0, 0, c.DeleteDays)
 }

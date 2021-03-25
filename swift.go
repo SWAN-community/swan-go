@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"net/url"
 	"swift"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -70,8 +69,8 @@ func decryptAndDecode(
 // setDefaults sets the empty values for the storage operation in SWIFT. If
 // values exist then these are used rather than the defaults. If not CBID exists
 // the a new random value is used.
-func setDefaults(q *url.Values) {
-	t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+func setDefaults(c *Configuration, q *url.Values) {
+	t := c.DeleteDate().Format("2006-01-02")
 	q.Set(fmt.Sprintf("cbid<%s", t), uuid.New().String())
 	q.Set(fmt.Sprintf("email<%s", t), "")
 	q.Set(fmt.Sprintf("allow<%s", t), "")

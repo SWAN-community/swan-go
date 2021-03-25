@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 func handlerStop(s *services) http.HandlerFunc {
@@ -53,7 +52,7 @@ func handlerStop(s *services) http.HandlerFunc {
 		}
 
 		// Create the URL with the parameters provided by the publisher.
-		t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+		t := s.config.DeleteDate().Format("2006-01-02")
 		r.Form.Set(fmt.Sprintf("stop+%s", t), r.Form.Get("host"))
 		r.Form.Set("message", fmt.Sprintf(
 			"Bye, bye %s. Thanks for telling the world.",

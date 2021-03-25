@@ -46,7 +46,7 @@ func handlerFetch(s *services) http.HandlerFunc {
 
 		// Set the SWAN fields to empty values that will only be used if no
 		// other value is returned.
-		setDefaults(&r.Form)
+		setDefaults(&s.config, &r.Form)
 
 		// Uses the SWIFT access node associated with this internet domain
 		// to determine the URL to direct the browser to.

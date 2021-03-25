@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 // handlerUpdate returns a URL that can be used in the browser primary
@@ -46,7 +45,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		}
 
 		// Set the SWAN fields to the values provided.
-		t := time.Now().UTC().AddDate(0, 3, 0).Format("2006-01-02")
+		t := s.config.DeleteDate().Format("2006-01-02")
 		r.Form.Set(fmt.Sprintf("cbid>%s", t), r.Form.Get("cbid"))
 		r.Form.Set(fmt.Sprintf("email>%s", t), r.Form.Get("email"))
 		r.Form.Set(fmt.Sprintf("allow>%s", t), r.Form.Get("allow"))
