@@ -34,12 +34,12 @@ import (
 // Seperator used for an array of string values.
 const listSeparator = "\r\n"
 
-// handlerRawAsJSON returns the original data held in the the operation.
+// handlerDecryptRawAsJSON returns the original data held in the the operation.
 // Used by user interfaces to get the operations details for dispaly, or to
 // continue a storage operation after time has passed waiting for the user.
 // This method should never be used for passing for purposes other than for
 // users editing their data.
-func handlerRawAsJSON(s *services) http.HandlerFunc {
+func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check caller can access.
@@ -50,17 +50,9 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Decode the query string to form the byte array.
-		d, err := base64.RawURLEncoding.DecodeString(r.Form.Get("data"))
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
-			return
-		}
-
-		// Decrypt the string with the access node.
-		v, err := decryptAndDecode(s.swift, r.Host, d)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+		// Get the SWIFT results from the request.
+		o := getSWIFTResults(s, w, r)
+		if o == nil {
 			return
 		}
 
@@ -68,7 +60,7 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 		p := make(map[string]string)
 
 		// Unpack or copy the SWIFT key value pairs to the map.
-		for _, v := range v.Pairs() {
+		for _, v := range o.Pairs() {
 			switch v.Key() {
 			case "swid":
 				// SWID does not get the OWID removed. It's is copied.
@@ -111,15 +103,15 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 		}
 
 		// Set the values needed by the UIP to continue the operation.
-		p["title"] = v.HTML.Title
-		p["backgroundColor"] = v.HTML.BackgroundColor
-		p["messageColor"] = v.HTML.MessageColor
-		p["progressColor"] = v.HTML.ProgressColor
-		p["message"] = v.HTML.Message
-		p["returnUrl"] = v.State()[0]
-		p["accessNode"] = v.State()[1]
-		p["displayUserInterface"] = v.State()[2]
-		p["postMessageOnComplete"] = v.State()[3]
+		p["title"] = o.HTML.Title
+		p["backgroundColor"] = o.HTML.BackgroundColor
+		p["messageColor"] = o.HTML.MessageColor
+		p["progressColor"] = o.HTML.ProgressColor
+		p["message"] = o.HTML.Message
+		p["returnUrl"] = o.State()[0]
+		p["accessNode"] = o.State()[1]
+		p["displayUserInterface"] = o.State()[2]
+		p["postMessageOnComplete"] = o.State()[3]
 
 		// Turn the map of Raw SWAN data into a JSON string.
 		j, err := json.Marshal(p)
@@ -133,12 +125,12 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 	}
 }
 
-// handlerDataAsJSON turns the the "data" parameter into an array of key value
-// pairs where the value is encoded as an OWID using the credentials of the SWAN
-// Operator.
+// handlerDecryptAsJSON turns the the "encrypted" parameter into an array of key
+// value pairs where the value is encoded as an OWID using the credentials of
+// the SWAN Operator.
 // If the timestamp of the data provided has expired then an error is returned.
 // The Email value is converted to a hashed version before being returned.
-func handlerDataAsJSON(s *services) http.HandlerFunc {
+func handlerDecryptAsJSON(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check caller can access.
@@ -149,17 +141,9 @@ func handlerDataAsJSON(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Decode the query string to form the byte array.
-		d, err := base64.RawURLEncoding.DecodeString(r.Form.Get("data"))
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
-			return
-		}
-
-		// Decrypt the string with the access node.
-		o, err := decryptAndDecode(s.swift, r.Host, d)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+		// Get the SWIFT results from the request.
+		o := getSWIFTResults(s, w, r)
+		if o == nil {
 			return
 		}
 
@@ -194,7 +178,48 @@ func handlerDataAsJSON(s *services) http.HandlerFunc {
 	}
 }
 
+// Check that the encrypted parameter is present and if so decodes and decrypts
+// it to return the SWIFT results. If there is an error then the method will be
+// responsible for handling the response.
+func getSWIFTResults(
+	s *services,
+	w http.ResponseWriter,
+	r *http.Request) *swift.Results {
+
+	// Validate that the encrypted parameter is present.
+	v := r.Form.Get("encrypted")
+	if v == "" {
+		returnAPIError(
+			&s.config,
+			w,
+			fmt.Errorf("Missing 'encrypted' parameter"),
+			http.StatusBadRequest)
+		return nil
+	}
+
+	// Decode the query string to form the byte array.
+	d, err := base64.RawURLEncoding.DecodeString(v)
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusBadRequest)
+		return nil
+	}
+
+	// Decrypt the string with the access node.
+	o, err := decryptAndDecode(s.swift, r.Host, d)
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusBadRequest)
+		return nil
+	}
+
+	return o
+}
+
+// sendGzipJSON responds with the JSON payload provided. If debug is enabled
+// then the response is set to the logger.
 func sendGzipJSON(s *services, w http.ResponseWriter, j []byte) {
+	if s.config.Debug {
+		log.Println(string(j))
+	}
 	g := gzip.NewWriter(w)
 	defer g.Close()
 	w.Header().Set("Content-Encoding", "gzip")

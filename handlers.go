@@ -49,8 +49,8 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/stop", handlerStop(s))
 	http.HandleFunc("/swan/api/v1/home-node", handlerHomeNode(s))
-	http.HandleFunc("/swan/api/v1/data", handlerDataAsJSON(s))
-	http.HandleFunc("/swan/api/v1/raw", handlerRawAsJSON(s))
+	http.HandleFunc("/swan/api/v1/decrypt", handlerDecryptAsJSON(s))
+	http.HandleFunc("/swan/api/v1/decrypt-raw", handlerDecryptRawAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
 	http.HandleFunc("/swan/api/v1/create-swid", handlerCreateSWID(s))
 	return nil

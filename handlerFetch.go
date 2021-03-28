@@ -19,6 +19,7 @@ package swan
 import (
 	"compress/gzip"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -35,6 +36,11 @@ func handlerFetch(s *services) http.HandlerFunc {
 				errors.New("Not authorized"),
 				http.StatusUnauthorized)
 			return
+		}
+
+		// Write out the input to the log if in debug mode.
+		if s.config.Debug {
+			log.Println(r.URL.String() + "?" + r.Form.Encode())
 		}
 
 		// Validate the set the return URL.
@@ -58,6 +64,11 @@ func handlerFetch(s *services) http.HandlerFunc {
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
+		}
+
+		// Write out the URL to the log if in debug mode.
+		if s.config.Debug {
+			log.Println(u)
 		}
 
 		// Return the response from the SWIFT layer.
