@@ -22,7 +22,7 @@ import (
 	"net/http"
 )
 
-func handlerCreateCBID(s *services) http.HandlerFunc {
+func handlerCreateSWID(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check caller is authorized to access SWAN.
@@ -33,8 +33,8 @@ func handlerCreateCBID(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Create the CBID OWID for this SWAN Operator.
-		c, err := createCBID(s, r)
+		// Create the SWID OWID for this SWAN Operator.
+		c, err := createSWID(s, r)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}

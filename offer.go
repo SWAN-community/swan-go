@@ -36,17 +36,17 @@ type Offer struct {
 	Placement   string     // A value assigned by the publisher for the advertisement slot on the web page
 	PubDomain   string     // The domain that the advertisement slot will appear on
 	UUID        []byte     // A unique identifier for this offer
-	CBID        *owid.OWID // The Commmon Browser ID
+	SWID        *owid.OWID // The Commmon Browser ID
 	SID         *owid.OWID // The Signed In ID
 	Preferences *owid.OWID // The privacy preferences string
 	Stopped     []string   // List of domains of advert IDs that should not be shown
 }
 
-// CBIDAsString as a base 64 string.
-func (o *Offer) CBIDAsString() string {
-	u, err := uuid.FromBytes(o.CBID.Payload)
+// SWIDAsString as a base 64 string.
+func (o *Offer) SWIDAsString() string {
+	u, err := uuid.FromBytes(o.SWID.Payload)
 	if err != nil {
-		return o.CBID.PayloadAsPrintable()
+		return o.SWID.PayloadAsPrintable()
 	}
 	return u.String()
 }
@@ -129,7 +129,7 @@ func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = o.CBID.ToBuffer(f)
+	err = o.SWID.ToBuffer(f)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.CBID, err = owid.FromBuffer(f)
+	o.SWID, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}

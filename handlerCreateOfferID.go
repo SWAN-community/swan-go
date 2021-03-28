@@ -144,7 +144,7 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		return nil, err
 	}
 
-	cbid, err := getOWID(s, r, "cbid")
+	swid, err := getOWID(s, r, "swid")
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		return nil, err
 	}
 
-	pref, err := getOWID(s, r, "preferences")
+	pref, err := getOWID(s, r, "pref")
 	if err != nil {
 		return nil, err
 	}
@@ -178,14 +178,14 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		pl,
 		pu,
 		uuid,
-		cbid,
+		swid,
 		sid,
 		pref,
 		stp}, nil
 }
 
 func offerGetStopped(r *http.Request) ([]string, error) {
-	s64 := r.FormValue("stopped")
+	s64 := r.FormValue("stop")
 	s, err := base64.RawStdEncoding.DecodeString(s64)
 	if err != nil {
 		return nil, err

@@ -70,8 +70,8 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 		// Unpack or copy the SWIFT key value pairs to the map.
 		for _, v := range v.Pairs() {
 			switch v.Key() {
-			case "cbid":
-				// CBID does not get the OWID removed. It's is copied.
+			case "swid":
+				// SWID does not get the OWID removed. It's is copied.
 				o := getOWIDFromSWIFTPair(s, v)
 				if o != nil {
 					p[v.Key()] = o.AsString()
@@ -85,7 +85,7 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 					p[v.Key()] = string(b)
 				}
 				break
-			case "allow":
+			case "pref":
 				// Allow preferences are unpacked so that the original value can
 				// be displayed.
 				b := unpackOWID(s, v)
@@ -96,9 +96,9 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 			}
 		}
 
-		// If there is no valid CBID create a new one.
-		if p["cbid"] == "" {
-			o, err := createCBID(s, r)
+		// If there is no valid SWID create a new one.
+		if p["swid"] == "" {
+			o, err := createSWID(s, r)
 			if err != nil {
 				returnAPIError(
 					&s.config,
@@ -107,7 +107,7 @@ func handlerRawAsJSON(s *services) http.HandlerFunc {
 					http.StatusInternalServerError)
 				return
 			}
-			p["cbid"] = o.AsString()
+			p["swid"] = o.AsString()
 		}
 
 		// Set the values needed by the UIP to continue the operation.
@@ -273,14 +273,14 @@ func convertPairs(
 				return nil, err
 			}
 			break
-		case "allow":
+		case "pref":
 			err = verifyOWID(s, v.Values()[0])
 			if err != nil {
 				return nil, err
 			}
 			w[i] = copyValue(v)
 			break
-		case "cbid":
+		case "swid":
 			err = verifyOWID(s, v.Values()[0])
 			if err != nil {
 				return nil, err

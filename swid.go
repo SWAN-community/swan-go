@@ -23,8 +23,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// createCBID returns an OWID with a unique new CBID.
-func createCBID(s *services, r *http.Request) (*owid.OWID, error) {
+// createSWID returns an OWID with a unique new SWID.
+func createSWID(s *services, r *http.Request) (*owid.OWID, error) {
 	c, err := s.owid.GetCreator(r.Host)
 	if err != nil {
 		return nil, err

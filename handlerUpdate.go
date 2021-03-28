@@ -47,12 +47,12 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		}
 
 		// Validate that the SWAN values provided are valid OWIDs.
-		err = validateOWID(s, &r.Form, "cbid")
+		err = validateOWID(s, &r.Form, "swid")
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
-		err = validateOWID(s, &r.Form, "allow")
+		err = validateOWID(s, &r.Form, "pref")
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
@@ -65,13 +65,13 @@ func handlerUpdate(s *services) http.HandlerFunc {
 
 		// Set the SWAN fields to the values provided.
 		t := s.config.DeleteDate().Format("2006-01-02")
-		r.Form.Set(fmt.Sprintf("cbid>%s", t), r.Form.Get("cbid"))
+		r.Form.Set(fmt.Sprintf("swid>%s", t), r.Form.Get("swid"))
 		r.Form.Set(fmt.Sprintf("email>%s", t), r.Form.Get("email"))
-		r.Form.Set(fmt.Sprintf("allow>%s", t), r.Form.Get("allow"))
+		r.Form.Set(fmt.Sprintf("pref>%s", t), r.Form.Get("pref"))
 		r.Form.Set(fmt.Sprintf("stop<%s", t), "")
-		r.Form.Del("cbid")
+		r.Form.Del("swid")
 		r.Form.Del("email")
-		r.Form.Del("allow")
+		r.Form.Del("pref")
 		r.Form.Del("stop")
 
 		// Uses the SWIFT access node associated with this internet domain
@@ -97,7 +97,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 }
 
 func validateOWID(s *services, q *url.Values, k string) error {
-	o, err := owid.FromForm(q, "cbid")
+	o, err := owid.FromForm(q, "swid")
 	if err != nil {
 		return err
 	}

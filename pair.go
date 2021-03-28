@@ -93,7 +93,7 @@ func (p *Pair) AsStringArray() ([]string, error) {
 	return s, nil
 }
 
-// AsOWID returns the Value as an OWID structure. Used for CBID, SID and
+// AsOWID returns the Value as an OWID structure. Used for SWID, SID and
 // Preferences. If the Value is not an OWID then an error is returned.
 func (p *Pair) AsOWID() (*owid.OWID, error) {
 	return owid.FromByteArray(p.Value)

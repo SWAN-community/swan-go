@@ -52,7 +52,7 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/data", handlerDataAsJSON(s))
 	http.HandleFunc("/swan/api/v1/raw", handlerRawAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
-	http.HandleFunc("/swan/api/v1/create-cbid", handlerCreateCBID(s))
+	http.HandleFunc("/swan/api/v1/create-swid", handlerCreateSWID(s))
 	return nil
 }
 
