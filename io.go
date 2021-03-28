@@ -34,6 +34,29 @@ func writeByte(b *bytes.Buffer, i byte) error {
 	return b.WriteByte(i)
 }
 
+func readUint16(b *bytes.Buffer) (uint16, error) {
+	d := b.Next(2)
+	if len(d) != 2 {
+		return 0, fmt.Errorf("'%d' bytes incorrect for Uint16", len(d))
+	}
+	return binary.LittleEndian.Uint16(d), nil
+}
+
+func writeUint16(b *bytes.Buffer, i uint16) error {
+	v := make([]byte, 2)
+	binary.LittleEndian.PutUint16(v, i)
+	l, err := b.Write(v)
+	if err == nil {
+		if l != len(v) {
+			return fmt.Errorf(
+				"Mismatched lengths '%d' and '%d'",
+				l,
+				len(v))
+		}
+	}
+	return err
+}
+
 func readUint32(b *bytes.Buffer) (uint32, error) {
 	d := b.Next(4)
 	if len(d) != 4 {

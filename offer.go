@@ -18,45 +18,53 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"owid"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+// Used to separate stopped advert IDs in a single string.
+const offerStoppedSeparator = "\r"
 
 // Offer (aka Transaction ID or Bid ID) contains the information about the
 // opportunity to advertise with a publisher. It is created by the SWAN host
 // as an OWID and as such is signed by the SWAN host and not the publisher.
 type Offer struct {
 	base
-	Placement   string // A value assigned by the publisher for the advertisement slot on the web page
-	PubDomain   string // The domain that the advertisement slot will appear on
-	UUID        []byte // A unique identifier for this offer
-	CBID        []byte // The Commmon Browser ID (not the OWID version)
-	SID         []byte // The Signed In ID (not the OWID version)
-	Preferences []byte // The privacy preferences string (not the OWID version)
-	Stopped     []byte // List of domains that adverts should not be shown from
+	Placement   string     // A value assigned by the publisher for the advertisement slot on the web page
+	PubDomain   string     // The domain that the advertisement slot will appear on
+	UUID        []byte     // A unique identifier for this offer
+	CBID        *owid.OWID // The Commmon Browser ID
+	SID         *owid.OWID // The Signed In ID
+	Preferences *owid.OWID // The privacy preferences string
+	Stopped     []string   // List of domains of advert IDs that should not be shown
 }
 
 // CBIDAsString as a base 64 string.
 func (o *Offer) CBIDAsString() string {
-	return base64.StdEncoding.EncodeToString(o.CBID)
+	u, err := uuid.FromBytes(o.CBID.Payload)
+	if err != nil {
+		return o.CBID.PayloadAsPrintable()
+	}
+	return u.String()
 }
 
 // SIDAsString as a base 64 string.
 func (o *Offer) SIDAsString() string {
-	return base64.StdEncoding.EncodeToString(o.SID)
+	return o.SID.PayloadAsPrintable()
 }
 
 // PreferencesAsString as a base 64 string.
 func (o *Offer) PreferencesAsString() string {
-	return string(o.Preferences)
+	return o.Preferences.PayloadAsString()
 }
 
 // StoppedAsArray returns an array of domains that should not be included in
 // bids.
 func (o *Offer) StoppedAsArray() []string {
-	return strings.Split(string(o.Stopped), "\r\n")
+	return o.Stopped
 }
 
 // IsStopped returns true if the URL provided is stopped.
@@ -121,19 +129,19 @@ func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(f, o.CBID)
+	err = o.CBID.ToBuffer(f)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(f, o.SID)
+	err = o.SID.ToBuffer(f)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(f, o.Preferences)
+	err = o.Preferences.ToBuffer(f)
 	if err != nil {
 		return err
 	}
-	err = writeByteArray(f, o.Stopped)
+	err = writeString(f, strings.Join(o.Stopped, offerStoppedSeparator))
 	if err != nil {
 		return err
 	}
@@ -177,21 +185,22 @@ func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.CBID, err = readByteArray(f)
+	o.CBID, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}
-	o.SID, err = readByteArray(f)
+	o.SID, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}
-	o.Preferences, err = readByteArray(f)
+	o.Preferences, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}
-	o.Stopped, err = readByteArray(f)
+	s, err := readString(f)
 	if err != nil {
 		return err
 	}
+	o.Stopped = strings.Split(s, offerStoppedSeparator)
 	return nil
 }

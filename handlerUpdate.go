@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"owid"
 )
 
 // handlerUpdate returns a URL that can be used in the browser primary
@@ -39,6 +41,23 @@ func handlerUpdate(s *services) http.HandlerFunc {
 
 		// Validate and set the return URL.
 		err := setURL("returnUrl", "returnUrl", &r.Form)
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+
+		// Validate that the SWAN values provided are valid OWIDs.
+		err = validateOWID(s, &r.Form, "cbid")
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+		err = validateOWID(s, &r.Form, "allow")
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
+		err = validateOWID(s, &r.Form, "email")
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
@@ -75,4 +94,19 @@ func handlerUpdate(s *services) http.HandlerFunc {
 			return
 		}
 	}
+}
+
+func validateOWID(s *services, q *url.Values, k string) error {
+	o, err := owid.FromForm(q, "cbid")
+	if err != nil {
+		return err
+	}
+	b, err := o.Verify(s.config.Scheme)
+	if err != nil {
+		return err
+	}
+	if b == false {
+		return fmt.Errorf("'%s' not a verified OWID", k)
+	}
+	return nil
 }

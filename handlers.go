@@ -49,9 +49,10 @@ func AddHandlers(
 	http.HandleFunc("/swan/api/v1/update", handlerUpdate(s))
 	http.HandleFunc("/swan/api/v1/stop", handlerStop(s))
 	http.HandleFunc("/swan/api/v1/home-node", handlerHomeNode(s))
-	http.HandleFunc("/swan/api/v1/values-as-json", handlerValuesAsJSON(s))
-	http.HandleFunc("/swan/api/v1/operation-as-json", handlerOperationAsJSON(s))
+	http.HandleFunc("/swan/api/v1/data", handlerDataAsJSON(s))
+	http.HandleFunc("/swan/api/v1/raw", handlerRawAsJSON(s))
 	http.HandleFunc("/swan/api/v1/create-offer-id", handlerCreateOfferID(s))
+	http.HandleFunc("/swan/api/v1/create-cbid", handlerCreateCBID(s))
 	return nil
 }
 
@@ -77,7 +78,6 @@ func returnAPIError(
 	w http.ResponseWriter,
 	err error,
 	code int) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	http.Error(w, err.Error(), code)

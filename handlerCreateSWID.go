@@ -22,12 +22,8 @@ import (
 	"net/http"
 )
 
-// handlerFetch returns a URL that can be used in the browser primary navigation
-// to retrieve the most current data from the SWAN network. If no data is
-// available default values are returned.
-func handlerFetch(s *services) http.HandlerFunc {
+func handlerCreateCBID(s *services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var err error
 
 		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
@@ -37,36 +33,25 @@ func handlerFetch(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Validate the set the return URL.
-		err = setURL("returnUrl", "returnUrl", &r.Form)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
-			return
-		}
-
-		// Set the SWAN fields to empty values that will only be used if no
-		// other value is returned.
-		err = setDefaults(s, r)
+		// Create the CBID OWID for this SWAN Operator.
+		c, err := createCBID(s, r)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
 		}
 
-		// Uses the SWIFT access node associated with this internet domain
-		// to determine the URL to direct the browser to.
-		u, err := createStorageOperationURL(s.swift, r, r.Form)
+		// Get the OWID as a byte array.
+		b, err := c.AsByteArray()
 		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusBadRequest)
-			return
+			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
 
-		// Return the response from the SWIFT layer.
+		// Return the URL as a text string.
 		g := gzip.NewWriter(w)
 		defer g.Close()
 		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		_, err = g.Write([]byte(u))
+		_, err = g.Write(b)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return

@@ -18,10 +18,12 @@ package swan
 
 import (
 	"compress/gzip"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"owid"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -70,7 +72,6 @@ func handlerCreateOfferID(s *services) http.HandlerFunc {
 		g := gzip.NewWriter(w)
 		defer g.Close()
 		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		_, err = g.Write(b)
@@ -93,8 +94,7 @@ func createOfferID(
 	if err != nil {
 		return nil, err
 	}
-	o := c.CreateOWID(b)
-	err = c.Sign(o)
+	o, err := c.CreateOWIDandSign(b)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,8 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		return nil, err
 	}
 
-	stopped, err := getOWID(s, r, "stopped")
+	// Get the stopped adverts string.
+	stp, err := offerGetStopped(r)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +178,24 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		pl,
 		pu,
 		uuid,
-		cbid.Payload,
-		sid.Payload,
-		pref.Payload,
-		stopped.Payload}, nil
+		cbid,
+		sid,
+		pref,
+		stp}, nil
+}
+
+func offerGetStopped(r *http.Request) ([]string, error) {
+	s64 := r.FormValue("stopped")
+	s, err := base64.RawStdEncoding.DecodeString(s64)
+	if err != nil {
+		return nil, err
+	}
+	a := strings.Split(string(s), listSeparator)
+	v := make([]string, 0, len(a))
+	for _, i := range a {
+		if i != "" {
+			v = append(v, i)
+		}
+	}
+	return v, nil
 }
