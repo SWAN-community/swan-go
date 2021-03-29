@@ -18,7 +18,6 @@ package swan
 
 import (
 	"compress/gzip"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -160,10 +159,7 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 	}
 
 	// Get the stopped adverts string.
-	stp, err := offerGetStopped(r)
-	if err != nil {
-		return nil, err
-	}
+	stp := offerGetStopped(r)
 
 	// Random one time data is used to ensure the Offer ID is unique for all
 	// time.
@@ -184,18 +180,6 @@ func getOfferID(s *services, r *http.Request) (*Offer, error) {
 		stp}, nil
 }
 
-func offerGetStopped(r *http.Request) ([]string, error) {
-	s64 := r.FormValue("stop")
-	s, err := base64.RawStdEncoding.DecodeString(s64)
-	if err != nil {
-		return nil, err
-	}
-	a := strings.Split(string(s), listSeparator)
-	v := make([]string, 0, len(a))
-	for _, i := range a {
-		if i != "" {
-			v = append(v, i)
-		}
-	}
-	return v, nil
+func offerGetStopped(r *http.Request) []string {
+	return strings.Split(r.FormValue("stop"), listSeparator)
 }

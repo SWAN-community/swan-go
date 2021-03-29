@@ -19,8 +19,11 @@ package swan
 import (
 	"compress/gzip"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"owid"
+	"time"
 )
 
 // handlerFetch returns a URL that can be used in the browser primary navigation
@@ -50,13 +53,10 @@ func handlerFetch(s *services) http.HandlerFunc {
 			return
 		}
 
-		// Set the SWAN fields to empty values that will only be used if no
-		// other value is returned.
-		err = setDefaults(s, r)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
+		// If the request includes data that is currently held by the caller
+		// then configure the storage operation to use these values if they
+		// relate to valid OWIDs.
+		setDefaults(s, r)
 
 		// Uses the SWIFT access node associated with this internet domain
 		// to determine the URL to direct the browser to.
@@ -82,5 +82,143 @@ func handlerFetch(s *services) http.HandlerFunc {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+// setDefaults sets the values for the storage operation in SWIFT if there are
+// no values in the network. SWID, preference OWIDs, and stop identifiers can be
+// provided by the caller for this situation. If no SWID is provided then SWAN
+// will assign a new random one.
+func setDefaults(s *services, r *http.Request) {
+	t := s.config.DeleteDate().Format("2006-01-02")
+	q := &r.Form
+
+	// Process any exist SWID or preference data provided by the caller.
+	setSWID(s, r)
+	setPerf(s, r)
+
+	// Use the other values provided.
+	q.Set(fmt.Sprintf("email<%s", t), "")
+	q.Set(fmt.Sprintf("stop<%s", t), q.Get("stop"))
+
+	// Delete any common parameters that might have been included in the request
+	// that we do not need. Avoids SWIFT trying to process then as keys.
+	q.Del("sid")
+	q.Del("stop")
+	q.Del("val")
+}
+
+// setPerf gets the value of perf from the request and verifies it's a valid
+// OWID. If it is valid then use it as the default value if the SWAN network
+// does not contain a value. If it is not valid then an empty value will be
+// used to indicate that the user has not provided any preferences.
+func setPerf(s *services, r *http.Request) {
+	var t time.Time         // The expiry time in SWIFT for the value being written
+	v := r.Form.Get("pref") // The value for the Perf. to use if one not found
+	o, err := owid.FromBase64(v)
+	if err != nil {
+		logNonCriticalError(s, err)
+		v = ""
+	} else {
+
+		// There is a valid OWID for the Perf. Does it meet the rules?
+		b, err := o.Verify(s.config.Scheme)
+		if err != nil {
+			logNonCriticalError(s, err)
+			v = ""
+		} else if b {
+
+			// Change the expiry time to be based on the Perf. creation date.
+			t = o.Date.AddDate(0, 0, s.config.DeleteDays)
+
+			// If the value has already expired then don't use it.
+			if time.Now().UTC().After(t) {
+				v = ""
+			}
+		} else {
+			v = ""
+		}
+	}
+
+	if v == "" {
+		t = s.config.DeleteDate()
+	}
+
+	// Set the value in the SWIFT storage operation, and remove the perf from
+	// the form.
+	r.Form.Set(fmt.Sprintf("pref<%s", t.Format("2006-01-02")), v)
+	r.Form.Del("pref")
+}
+
+// setSWID gets the value of the SWID from the form associated with the request.
+// If that SWID is a valid OWID, can be verified with the creators public key,
+// and is SWAN access node that is known to this access node, and is finally
+// still valid when checked against the delete date, then use this value in
+// cases where the SWID does not exist in the SWAN network. This might be
+// because the SWAN Operators nodes have had cookies removed due to tracking
+// prevention methods, but the value that the caller has is still valid and can
+// be used by the SWAN Operators.
+// If none of the conditions are valid then a new SWID is created and used if
+// the SWAN network does not contain any other values.
+func setSWID(s *services, r *http.Request) {
+	var t time.Time         // The expiry time in SWIFT for the value being written
+	v := r.Form.Get("swid") // The value for the SWID to use if one not found
+	o, err := owid.FromBase64(v)
+	if err != nil {
+		logNonCriticalError(s, err)
+		v = ""
+	} else {
+
+		// There is a valid OWID for the SWID. Does it meet the rules?
+		b, err := o.Verify(s.config.Scheme)
+		if err != nil {
+			logNonCriticalError(s, err)
+			v = ""
+		} else if b && isSWAN(s, o) {
+
+			// Change the expiry time to be based on the SWID creation date.
+			t = o.Date.AddDate(0, 0, s.config.DeleteDays)
+
+			// If the value has already expired then don't use it.
+			if time.Now().UTC().After(t) {
+				v = ""
+			}
+		} else {
+			v = ""
+		}
+	}
+
+	if v == "" {
+
+		// There is no valid SWID so create a new one.
+		c, err := createSWID(s, r)
+		if err != nil {
+			logNonCriticalError(s, err)
+		} else {
+			v = c.AsString()
+			t = s.config.DeleteDate()
+		}
+	}
+
+	// Set the value in the SWIFT storate operation, and remove the SWID from
+	// the form.
+	r.Form.Set(fmt.Sprintf("swid<%s", t.Format("2006-01-02")), v)
+	r.Form.Del("swid")
+}
+
+// isSWAN returns true if the OWID was created from an access node known to this
+// SWAN access node.
+func isSWAN(s *services, o *owid.OWID) bool {
+	n, err := s.swift.GetAccessNodeForHost(o.Domain)
+	if err != nil {
+		logNonCriticalError(s, err)
+		return false
+	}
+	return n != nil && n.Domain() == o.Domain
+}
+
+func logNonCriticalError(s *services, err error) {
+	if s.config.Debug {
+		log.Println(err)
 	}
 }

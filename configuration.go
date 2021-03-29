@@ -27,8 +27,8 @@ import (
 type Configuration struct {
 	Scheme string `json:"scheme"` // The scheme to use for requests
 	Debug  bool   `json:"debug"`
-	// Seconds until the value provided expires and must be revalidated
-	ValueTimeout time.Duration `json:"valueTimeout"`
+	// Seconds until the value provided should be revalidated
+	RevalidateSeconds time.Duration `json:"revalidateSeconds"`
 	// The number of days after which the data will automatically be removed
 	// from SWAN and will need to be provided again by the user.
 	DeleteDays int `json:"deleteDays"`

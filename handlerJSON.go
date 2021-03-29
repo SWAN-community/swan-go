@@ -17,7 +17,6 @@
 package swan
 
 import (
-	"bytes"
 	"compress/gzip"
 	"crypto/sha1"
 	"encoding/base64"
@@ -27,12 +26,16 @@ import (
 	"log"
 	"net/http"
 	"owid"
+	"strings"
 	"swift"
 	"time"
 )
 
 // Seperator used for an array of string values.
-const listSeparator = "\r\n"
+const listSeparator = " "
+
+// The time format to use when adding the validation time to the response.
+const ValidationTimeFormat = "2006-01-02T15:04:05Z07:00"
 
 // handlerDecryptRawAsJSON returns the original data held in the the operation.
 // Used by user interfaces to get the operations details for dispaly, or to
@@ -152,7 +155,7 @@ func handlerDecryptAsJSON(s *services) http.HandlerFunc {
 			returnAPIError(
 				&s.config,
 				w,
-				fmt.Errorf("data expired"),
+				fmt.Errorf("data expired and can no longer be used"),
 				http.StatusBadRequest)
 			return
 		}
@@ -257,39 +260,48 @@ func getOWIDFromSWIFTPair(s *services, p *swift.Pair) *owid.OWID {
 	return nil
 }
 
-// verifyOWID if debug is enabled then the OWID is verified before being
-// returned to the
-func verifyOWID(s *services, v []byte) error {
+// verifyOWID confirms that the OWID provided has a valid signature.
+func verifyOWID(s *services, o *owid.OWID) error {
+	b, err := o.Verify(s.config.Scheme)
+	if err != nil {
+		return err
+	}
+	if b == false {
+		return fmt.Errorf("OWID failed verification")
+	}
+	return nil
+}
+
+// verifyOWIDIfDebug confirms that the OWID byte array provided has a valid
+// signature only if debug mode is enabled.
+func verifyOWIDIfDebug(s *services, v []byte) error {
 	if s.config.Debug {
 		o, err := owid.FromByteArray(v)
 		if err != nil {
 			return err
 		}
-		b, err := o.Verify(s.config.Scheme)
-		if err != nil {
-			return err
-		}
-		if b == false {
-			return fmt.Errorf("OWID failed verification")
-		}
+		return verifyOWID(s, o)
 	}
 	return nil
 }
 
 // Copy the SWIFT results to the SWAN pairs. If the key is the email then it
-// will be converted to a SID. An error is returned if the SWIFT results are
+// will be converted to a SID. An additional pair is written to contain the
+// validation time in UTC. An error is returned if the SWIFT results are
 // not usable.
 func convertPairs(
 	s *services,
 	r *http.Request,
 	p []*swift.Pair) ([]*Pair, error) {
 	var err error
-	t := time.Now().UTC().Add(time.Second * s.config.ValueTimeout)
-	w := make([]*Pair, len(p))
+	var m time.Time
+	w := make([]*Pair, len(p)+1)
 	for i, v := range p {
+
+		// Turn the raw SWAN data into the SWAN data ready for readonly use.
 		switch v.Key() {
 		case "email":
-			err = verifyOWID(s, v.Values()[0])
+			err = verifyOWIDIfDebug(s, v.Values()[0])
 			if err != nil {
 				return nil, err
 			}
@@ -299,14 +311,14 @@ func convertPairs(
 			}
 			break
 		case "pref":
-			err = verifyOWID(s, v.Values()[0])
+			err = verifyOWIDIfDebug(s, v.Values()[0])
 			if err != nil {
 				return nil, err
 			}
 			w[i] = copyValue(v)
 			break
 		case "swid":
-			err = verifyOWID(s, v.Values()[0])
+			err = verifyOWIDIfDebug(s, v.Values()[0])
 			if err != nil {
 				return nil, err
 			}
@@ -322,7 +334,25 @@ func convertPairs(
 			w[i] = copyValue(v)
 			break
 		}
-		w[i].Expires = t
+
+		// Find the largest expiry data. This will be used to set the val pair
+		// to the expiry date.
+		if m.Before(w[i].Expires) {
+			m = w[i].Expires
+		}
+	}
+
+	// Add a final pair to indicate when the caller should revalidate the
+	// SWAN data with the network. This is recommended for the caller, but not
+	// compulsory.
+	t := time.Now().UTC()
+	e := t.Add(time.Second * s.config.RevalidateSeconds).Format(
+		ValidationTimeFormat)
+	w[len(w)-1] = &Pair{
+		Key:     "val",
+		Created: t,
+		Expires: m,
+		Value:   e,
 	}
 	return w, nil
 }
@@ -330,30 +360,31 @@ func convertPairs(
 // Converts the array of stopped values into a single string seperated by the
 // listSeparator.
 func getStopped(p *swift.Pair) (*Pair, error) {
-	var f bytes.Buffer
-	for i, v := range p.Values() {
-		_, err := f.Write(v)
-		if err != nil {
-			return nil, err
-		}
-		if i < len(p.Value())-1 {
-			f.Write([]byte(listSeparator))
+	s := make([]string, 0, len(p.Values()))
+	for _, v := range p.Values() {
+		if len(v) > 0 {
+			s = append(s, string(v))
 		}
 	}
-	return NewPairFromSWIFT(p, f.Bytes()), nil
+	return NewPairFromSWIFT(p, strings.Join(s, listSeparator)), nil
 }
 
+// copyValue turns the SWIFT pair into a SWAN pair taking the first value and
+// base 64 encoding it as a string.
 func copyValue(p *swift.Pair) *Pair {
-	return NewPairFromSWIFT(p, p.Values()[0])
+	return NewPairFromSWIFT(
+		p,
+		base64.RawStdEncoding.EncodeToString(p.Values()[0]))
 }
 
 // getSID turns the email address that is contained in the Value OWID into
 // a hashed version in a new OWID with this SWAN Operator as the creator.
 func getSID(s *services, r *http.Request, p *swift.Pair) (*Pair, error) {
-	var v Pair
-	v.Key = "sid"
-	v.Created = p.Created()
-	v.Expires = p.Expires()
+	v := &Pair{
+		Key:     "sid",
+		Created: p.Created(),
+		Expires: p.Expires(),
+	}
 	if len(p.Values()[0]) > 0 {
 		sid, err := createSID(p.Values()[0])
 		if err != nil {
@@ -363,12 +394,12 @@ func getSID(s *services, r *http.Request, p *swift.Pair) (*Pair, error) {
 		if err != nil {
 			return nil, err
 		}
-		v.Value, err = o.AsByteArray()
+		v.Value, err = o.AsBase64()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &v, nil
+	return v, nil
 }
 
 func createOWID(s *services, r *http.Request, v []byte) (*owid.OWID, error) {

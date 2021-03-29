@@ -17,7 +17,6 @@
 package swan
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"swift"
@@ -62,21 +61,4 @@ func decryptAndDecode(
 		return nil, err
 	}
 	return n.DecryptAndDecode(d)
-}
-
-// setDefaults sets the empty values for the storage operation in SWIFT. If
-// values exist then these are used rather than the defaults. If not SWID exists
-// the a new random value is used.
-func setDefaults(s *services, r *http.Request) error {
-	t := s.config.DeleteDate().Format("2006-01-02")
-	q := &r.Form
-	c, err := createSWID(s, r)
-	if err != nil {
-		return err
-	}
-	q.Set(fmt.Sprintf("swid<%s", t), c.AsString())
-	q.Set(fmt.Sprintf("email<%s", t), "")
-	q.Set(fmt.Sprintf("pref<%s", t), "")
-	q.Set(fmt.Sprintf("stop<%s", t), "")
-	return nil
 }
