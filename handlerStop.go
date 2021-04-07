@@ -19,6 +19,7 @@ package swan
 import (
 	"fmt"
 	"net/http"
+	"swift"
 )
 
 func handlerStop(s *services) http.HandlerFunc {
@@ -40,7 +41,7 @@ func handlerStop(s *services) http.HandlerFunc {
 		}
 
 		// Validate the set the return URL.
-		err := setURL("returnUrl", "returnUrl", &r.Form)
+		err := swift.SetURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return

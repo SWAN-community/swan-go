@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"owid"
+	"swift"
 )
 
 // handlerUpdate returns a URL that can be used in the browser primary
@@ -35,7 +36,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		}
 
 		// Validate and set the return URL.
-		err := setURL("returnUrl", "returnUrl", &r.Form)
+		err := swift.SetURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
