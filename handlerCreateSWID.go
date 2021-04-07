@@ -17,8 +17,6 @@
 package swan
 
 import (
-	"compress/gzip"
-	"errors"
 	"net/http"
 )
 
@@ -27,9 +25,6 @@ func handlerCreateSWID(s *services) http.HandlerFunc {
 
 		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
 			return
 		}
 
@@ -45,16 +40,7 @@ func handlerCreateSWID(s *services) http.HandlerFunc {
 			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
 		}
 
-		// Return the URL as a text string.
-		g := gzip.NewWriter(w)
-		defer g.Close()
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Cache-Control", "no-cache")
-		_, err = g.Write(b)
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
+		// Return the URL as a byte array.
+		sendResponse(s, w, "application/octet-stream", b)
 	}
 }

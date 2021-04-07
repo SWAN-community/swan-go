@@ -93,16 +93,17 @@ func (s *services) getAccessAllowed(
 	// Check that there are no HTTP headers that are usually sent by browsers.
 	// SWAN can only be used from server side environments to ensure that the
 	// accessKey does not become publicly available.
+	// Ignore this check if Debug is enabled.
 	if s.config.Debug == false {
 		for _, h := range invalidHTTPHeaders {
 			if r.Header.Get(h) != "" {
 				returnAPIError(&s.config, w,
 					fmt.Errorf(
-						"'%s' header must not be present in SWAN API requests as "+
-							"this indicates that the request is coming from a web "+
-							"browser and therefore the access key might be "+
-							"compromised if this configuration where to be made "+
-							"publicly available",
+						"'%s' header must not be present in SWAN API "+
+							"requests as this indicates that the request is "+
+							"coming from a web browser and therefore the "+
+							"access key might be compromised if this "+
+							"configuration where to be made publicly available",
 						h),
 					http.StatusNetworkAuthenticationRequired)
 				return false
@@ -143,6 +144,8 @@ func (s *services) getAccessAllowed(
 		return false
 	}
 
+	// Remove the access key to ensure it's not available to any further
+	// operations.
 	r.Form.Del("accessKey")
 
 	return true

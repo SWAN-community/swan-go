@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -111,5 +112,22 @@ func returnServerError(c *Configuration, w http.ResponseWriter, err error) {
 	}
 	if c.Debug {
 		println(err.Error())
+	}
+}
+
+func sendResponse(
+	s *services,
+	w http.ResponseWriter,
+	t string,
+	b []byte) {
+	g := gzip.NewWriter(w)
+	defer g.Close()
+	w.Header().Set("Content-Encoding", "gzip")
+	w.Header().Set("Content-Type", t)
+	w.Header().Set("Cache-Control", "no-cache")
+	_, err := g.Write(b)
+	if err != nil {
+		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
+		return
 	}
 }

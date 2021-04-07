@@ -17,11 +17,9 @@
 package swan
 
 import (
-	"compress/gzip"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -47,9 +45,6 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 
 		// Check caller can access.
 		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
 			return
 		}
 
@@ -60,7 +55,7 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 		}
 
 		// Create a map of key value pairs.
-		p := make(map[string]string)
+		p := make(map[string]interface{})
 
 		// Unpack or copy the SWIFT key value pairs to the map.
 		for _, v := range o.Pairs() {
@@ -111,10 +106,7 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 		p["messageColor"] = o.HTML.MessageColor
 		p["progressColor"] = o.HTML.ProgressColor
 		p["message"] = o.HTML.Message
-		p["returnUrl"] = o.State()[0]
-		p["accessNode"] = o.State()[1]
-		p["displayUserInterface"] = o.State()[2]
-		p["postMessageOnComplete"] = o.State()[3]
+		p["state"] = o.State()
 
 		// Turn the map of Raw SWAN data into a JSON string.
 		j, err := json.Marshal(p)
@@ -124,7 +116,7 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 		}
 
 		// Send the JSON string.
-		sendGzipJSON(s, w, j)
+		sendGzipJSON(s, w, r, j)
 	}
 }
 
@@ -138,9 +130,6 @@ func handlerDecryptAsJSON(s *services) http.HandlerFunc {
 
 		// Check caller can access.
 		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
 			return
 		}
 
@@ -177,7 +166,7 @@ func handlerDecryptAsJSON(s *services) http.HandlerFunc {
 		}
 
 		// Send the JSON string.
-		sendGzipJSON(s, w, j)
+		sendGzipJSON(s, w, r, j)
 	}
 }
 
@@ -219,19 +208,15 @@ func getSWIFTResults(
 
 // sendGzipJSON responds with the JSON payload provided. If debug is enabled
 // then the response is set to the logger.
-func sendGzipJSON(s *services, w http.ResponseWriter, j []byte) {
+func sendGzipJSON(
+	s *services,
+	w http.ResponseWriter,
+	r *http.Request,
+	j []byte) {
 	if s.config.Debug {
 		log.Println(string(j))
 	}
-	g := gzip.NewWriter(w)
-	defer g.Close()
-	w.Header().Set("Content-Encoding", "gzip")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-cache")
-	_, err := g.Write(j)
-	if err != nil {
-		returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-	}
+	sendResponse(s, w, "application/json", j)
 }
 
 // unpackOWID return the payload from the OWID value, or nil if the OWID is not

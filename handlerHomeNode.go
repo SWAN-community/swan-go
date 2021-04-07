@@ -17,8 +17,6 @@
 package swan
 
 import (
-	"compress/gzip"
-	"errors"
 	"net/http"
 )
 
@@ -29,9 +27,6 @@ func handlerHomeNode(s *services) http.HandlerFunc {
 
 		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
 			return
 		}
 
@@ -43,15 +38,6 @@ func handlerHomeNode(s *services) http.HandlerFunc {
 		}
 
 		// Return the response from the SWIFT layer.
-		g := gzip.NewWriter(w)
-		defer g.Close()
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		_, err = g.Write([]byte(n.Domain()))
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
+		sendResponse(s, w, "text/plain; charset=utf-8", []byte(n.Domain()))
 	}
 }

@@ -17,8 +17,6 @@
 package swan
 
 import (
-	"compress/gzip"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -33,9 +31,6 @@ func handlerUpdate(s *services) http.HandlerFunc {
 
 		// Check caller is authorized to access SWAN.
 		if s.getAccessAllowed(w, r) == false {
-			returnAPIError(&s.config, w,
-				errors.New("Not authorized"),
-				http.StatusUnauthorized)
 			return
 		}
 
@@ -83,21 +78,12 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		}
 
 		// Return the URL from the SWIFT layer.
-		g := gzip.NewWriter(w)
-		defer g.Close()
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		_, err = g.Write([]byte(u))
-		if err != nil {
-			returnAPIError(&s.config, w, err, http.StatusInternalServerError)
-			return
-		}
+		sendResponse(s, w, "text/plain; charset=utf-8", []byte(u))
 	}
 }
 
 func validateOWID(s *services, q *url.Values, k string) error {
-	o, err := owid.FromForm(q, "swid")
+	o, err := owid.FromForm(q, k)
 	if err != nil {
 		return err
 	}
