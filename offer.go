@@ -42,6 +42,11 @@ type Offer struct {
 	Stopped     []string   // List of domains of advert IDs that should not be shown
 }
 
+// Returns a new Offer with the correct version and offer information set.
+func NewOffer() Offer {
+	return Offer{base: base{typeVersion, typeOffer}}
+}
+
 // SWIDAsString as a base 64 string.
 func (o *Offer) SWIDAsString() string {
 	u, err := uuid.FromBytes(o.SWID.Payload)
