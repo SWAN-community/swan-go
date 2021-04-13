@@ -87,7 +87,7 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 		}
 
 		// If there is no valid SWID create a new one.
-		if p["swid"] == "" {
+		if p["swid"] == nil {
 			o, err := createSWID(s, r)
 			if err != nil {
 				returnAPIError(
@@ -280,50 +280,60 @@ func convertPairs(
 	p []*swift.Pair) ([]*Pair, error) {
 	var err error
 	var m time.Time
-	w := make([]*Pair, len(p)+1)
-	for i, v := range p {
+	w := make([]*Pair, 0, len(p)+1)
+	for _, v := range p {
 
 		// Turn the raw SWAN data into the SWAN data ready for readonly use.
 		switch v.Key() {
 		case "email":
-			err = verifyOWIDIfDebug(s, v.Values()[0])
-			if err != nil {
-				return nil, err
-			}
-			w[i], err = getSID(s, r, v)
-			if err != nil {
-				return nil, err
+			if len(v.Values()) > 0 {
+				err = verifyOWIDIfDebug(s, v.Values()[0])
+				if err != nil {
+					return nil, err
+				}
+				s, err := getSID(s, r, v)
+				if err != nil {
+					return nil, err
+				}
+				w = append(w, s)
 			}
 			break
 		case "pref":
-			err = verifyOWIDIfDebug(s, v.Values()[0])
-			if err != nil {
-				return nil, err
+			if len(v.Values()) > 0 {
+				err = verifyOWIDIfDebug(s, v.Values()[0])
+				if err != nil {
+					return nil, err
+				}
+				w = append(w, copyValue(v))
 			}
-			w[i] = copyValue(v)
 			break
 		case "swid":
-			err = verifyOWIDIfDebug(s, v.Values()[0])
-			if err != nil {
-				return nil, err
+			if len(v.Values()) > 0 {
+				err = verifyOWIDIfDebug(s, v.Values()[0])
+				if err != nil {
+					return nil, err
+				}
+				w = append(w, copyValue(v))
 			}
-			w[i] = copyValue(v)
 			break
 		case "stop":
-			w[i], err = getStopped(v)
+			s, err := getStopped(v)
 			if err != nil {
 				return nil, err
 			}
+			w = append(w, s)
 			break
 		default:
-			w[i] = copyValue(v)
+			w = append(w, copyValue(v))
 			break
 		}
+	}
 
-		// Find the largest expiry data. This will be used to set the val pair
-		// to the expiry date.
-		if m.Before(w[i].Expires) {
-			m = w[i].Expires
+	// Find the expiry date furthest in the future. This will be used to set the
+	// val pair to indicate the caller when they should recheck the network.
+	for _, v := range w {
+		if m.Before(v.Expires) {
+			m = v.Expires
 		}
 	}
 
@@ -333,12 +343,12 @@ func convertPairs(
 	t := time.Now().UTC()
 	e := t.Add(time.Second * s.config.RevalidateSeconds).Format(
 		ValidationTimeFormat)
-	w[len(w)-1] = &Pair{
+	w = append(w, &Pair{
 		Key:     "val",
 		Created: t,
 		Expires: m,
 		Value:   e,
-	}
+	})
 	return w, nil
 }
 
