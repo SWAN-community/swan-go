@@ -40,6 +40,9 @@ func handlerStop(s *services) http.HandlerFunc {
 			return
 		}
 
+		// As this is an update operation do not use the home node alone.
+		r.Form.Set("useHomeNode", "false")
+
 		// Validate the set the return URL.
 		err := swift.SetURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {

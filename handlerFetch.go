@@ -42,7 +42,7 @@ func handlerFetch(s *services) http.HandlerFunc {
 			log.Println(r.URL.String() + "?" + r.Form.Encode())
 		}
 
-		// Validate the set the return URL.
+		// Validate and set the return URL.
 		err = swift.SetURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
