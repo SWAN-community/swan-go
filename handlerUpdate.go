@@ -35,6 +35,9 @@ func handlerUpdate(s *services) http.HandlerFunc {
 			return
 		}
 
+		// As this is an update operation do not use the home node alone.
+		r.Form.Set("useHomeNode", "false")
+
 		// Validate and set the return URL.
 		err := swift.SetURL("returnUrl", "returnUrl", &r.Form)
 		if err != nil {
@@ -64,7 +67,7 @@ func handlerUpdate(s *services) http.HandlerFunc {
 		r.Form.Set(fmt.Sprintf("swid>%s", t), r.Form.Get("swid"))
 		r.Form.Set(fmt.Sprintf("email>%s", t), r.Form.Get("email"))
 		r.Form.Set(fmt.Sprintf("pref>%s", t), r.Form.Get("pref"))
-		r.Form.Set(fmt.Sprintf("stop<%s", t), "")
+		r.Form.Set(fmt.Sprintf("stop+%s", t), r.Form.Get("stop"))
 		r.Form.Del("swid")
 		r.Form.Del("email")
 		r.Form.Del("pref")
