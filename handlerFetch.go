@@ -89,6 +89,7 @@ func setDefaults(s *services, r *http.Request) {
 	// a SID once it's been fetched. Always favour the most recent email address
 	// available across the network.
 	q.Set("email>", "")
+	q.Set("salt>", "")
 
 	// Delete any common parameters that might have been included in the request
 	// that we do not need. Avoids SWIFT trying to process then as keys.
