@@ -79,7 +79,7 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 				// Salt is unpacked so that the email hash can be preserved.
 				b := unpackOWID(s, v)
 				if b != nil {
-					p[v.Key()] = base64.RawStdEncoding.EncodeToString(b)
+					p[v.Key()] = string(b)
 				}
 			case "pref":
 				// Allow preferences are unpacked so that the original value can
