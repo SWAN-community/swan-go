@@ -17,7 +17,7 @@
 package swan
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -75,6 +75,12 @@ func handlerDecryptRawAsJSON(s *services) http.HandlerFunc {
 					p[v.Key()] = string(b)
 				}
 				break
+			case "salt":
+				// Salt is unpacked so that the email hash can be preserved.
+				b := unpackOWID(s, v)
+				if b != nil {
+					p[v.Key()] = string(b)
+				}
 			case "pref":
 				// Allow preferences are unpacked so that the original value can
 				// be displayed.
@@ -152,7 +158,7 @@ func handlerDecryptAsJSON(s *services) http.HandlerFunc {
 		// Copy the key value pairs from SWIFT to SWAN. This is needed to
 		// turn the email into a SID, and to convert the stopped domains from
 		// byte arrays to a single string.
-		v, err := convertPairs(s, r, o.Pairs())
+		v, err := convertPairs(s, r, o.Map())
 		if err != nil {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
@@ -277,26 +283,37 @@ func verifyOWIDIfDebug(s *services, v []byte) error {
 func convertPairs(
 	s *services,
 	r *http.Request,
-	p []*swift.Pair) ([]*Pair, error) {
+	p map[string]*swift.Pair) ([]*Pair, error) {
 	var err error
 	var m time.Time
 	w := make([]*Pair, 0, len(p)+1)
-	for _, v := range p {
 
+	for _, v := range p {
 		// Turn the raw SWAN data into the SWAN data ready for readonly use.
 		switch v.Key() {
 		case "email":
-			if len(v.Values()) > 0 {
+			n := p["salt"]
+			if len(v.Values()) > 0 && len(n.Values()) > 0 {
+				// verify email
 				err = verifyOWIDIfDebug(s, v.Values()[0])
 				if err != nil {
 					return nil, err
 				}
-				s, err := getSID(s, r, v)
+				// verify salt
+				err = verifyOWIDIfDebug(s, n.Values()[0])
+				if err != nil {
+					return nil, err
+				}
+				s, err := getSID(s, r, v, n)
 				if err != nil {
 					return nil, err
 				}
 				w = append(w, s)
 			}
+			break
+		case "salt":
+			// Don't do anything with salt as we have used it when
+			// creating the SID.
 			break
 		case "pref":
 			if len(v.Values()) > 0 {
@@ -374,14 +391,14 @@ func copyValue(p *swift.Pair) *Pair {
 
 // getSID turns the email address that is contained in the Value OWID into
 // a hashed version in a new OWID with this SWAN Operator as the creator.
-func getSID(s *services, r *http.Request, p *swift.Pair) (*Pair, error) {
+func getSID(s *services, r *http.Request, p *swift.Pair, n *swift.Pair) (*Pair, error) {
 	v := &Pair{
 		Key:     "sid",
 		Created: p.Created(),
 		Expires: p.Expires(),
 	}
-	if len(p.Values()[0]) > 0 {
-		sid, err := createSID(p.Values()[0])
+	if len(p.Values()[0]) > 0 && len(n.Values()[0]) > 0 {
+		sid, err := createSID(p.Values()[0], n.Values()[0])
 		if err != nil {
 			return nil, err
 		}
@@ -421,14 +438,17 @@ func createOWID(s *services, r *http.Request, v []byte) (*owid.OWID, error) {
 	return o, nil
 }
 
-// TODO : What hashing algorithm do we want to use to turn email address into
-// hashes?
-func createSID(email []byte) ([]byte, error) {
-	o, err := owid.FromByteArray(email)
+// Create the SID by salting the email address and creating an sha256 hashes
+func createSID(email []byte, salt []byte) ([]byte, error) {
+	o1, err := owid.FromByteArray(email)
 	if err != nil {
 		return nil, err
 	}
-	hasher := sha1.New()
-	hasher.Write(o.Payload)
+	o2, err := owid.FromByteArray(salt)
+	if err != nil {
+		return nil, err
+	}
+	hasher := sha256.New()
+	hasher.Write(append(o1.Payload, o2.Payload...))
 	return hasher.Sum(nil), nil
 }

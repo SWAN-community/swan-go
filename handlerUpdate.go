@@ -61,15 +61,22 @@ func handlerUpdate(s *services) http.HandlerFunc {
 			returnAPIError(&s.config, w, err, http.StatusBadRequest)
 			return
 		}
+		err = validateOWID(s, &r.Form, "salt")
+		if err != nil {
+			returnAPIError(&s.config, w, err, http.StatusBadRequest)
+			return
+		}
 
 		// Set the SWAN fields to the values provided.
 		t := s.config.DeleteDate().Format("2006-01-02")
 		r.Form.Set(fmt.Sprintf("swid>%s", t), r.Form.Get("swid"))
 		r.Form.Set(fmt.Sprintf("email>%s", t), r.Form.Get("email"))
+		r.Form.Set(fmt.Sprintf("salt>%s", t), r.Form.Get("salt"))
 		r.Form.Set(fmt.Sprintf("pref>%s", t), r.Form.Get("pref"))
 		r.Form.Set(fmt.Sprintf("stop+%s", t), r.Form.Get("stop"))
 		r.Form.Del("swid")
 		r.Form.Del("email")
+		r.Form.Del("salt")
 		r.Form.Del("pref")
 		r.Form.Del("stop")
 
