@@ -358,7 +358,7 @@ func convertPairs(
 	// SWAN data with the network. This is recommended for the caller, but not
 	// compulsory.
 	t := time.Now().UTC()
-	e := t.Add(time.Second * s.config.RevalidateSeconds).Format(
+	e := t.Add(s.config.RevalidateSecondsDuration()).Format(
 		ValidationTimeFormat)
 	w = append(w, &Pair{
 		Key:     "val",

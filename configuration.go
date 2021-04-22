@@ -28,10 +28,15 @@ type Configuration struct {
 	Scheme string `json:"scheme"` // The scheme to use for requests
 	Debug  bool   `json:"debug"`
 	// Seconds until the value provided should be revalidated
-	RevalidateSeconds time.Duration `json:"revalidateSeconds"`
+	RevalidateSeconds int `json:"revalidateSeconds"`
 	// The number of days after which the data will automatically be removed
 	// from SWAN and will need to be provided again by the user.
 	DeleteDays int `json:"deleteDays"`
+}
+
+// RevalidateSecondsDuration in seconds as a time.Duration
+func (c *Configuration) RevalidateSecondsDuration() time.Duration {
+	return time.Duration(c.RevalidateSeconds) * time.Second
 }
 
 // NewConfig creates a new instance of configuration from the file provided.
