@@ -26,29 +26,29 @@ import (
 )
 
 // Used to separate stopped advert IDs in a single string.
-const offerStoppedSeparator = "\r"
+const impressionStoppedSeparator = "\r"
 
-// Offer (aka Transaction ID or Bid ID) contains the information about the
+// Impression contains the information about the
 // opportunity to advertise with a publisher. It is created by the SWAN host
 // as an OWID and as such is signed by the SWAN host and not the publisher.
-type Offer struct {
+type Impression struct {
 	base
 	Placement   string     // A value assigned by the publisher for the advertisement slot on the web page
 	PubDomain   string     // The domain that the advertisement slot will appear on
-	UUID        []byte     // A unique identifier for this offer
+	UUID        []byte     // A unique identifier for this impression
 	SWID        *owid.OWID // The Commmon Browser ID
 	SID         *owid.OWID // The Signed In ID
 	Preferences *owid.OWID // The privacy preferences string
 	Stopped     []string   // List of domains of advert IDs that should not be shown
 }
 
-// Returns a new Offer with the correct version and offer information set.
-func NewOffer() Offer {
-	return Offer{base: base{typeVersion, typeOffer}}
+// Returns a new Impression with the correct version and impression information set.
+func NewImpression() Impression {
+	return Impression{base: base{typeVersion, typeImpression}}
 }
 
 // SWIDAsString as a base 64 string.
-func (o *Offer) SWIDAsString() string {
+func (o *Impression) SWIDAsString() string {
 	u, err := uuid.FromBytes(o.SWID.Payload)
 	if err != nil {
 		return o.SWID.PayloadAsPrintable()
@@ -57,23 +57,23 @@ func (o *Offer) SWIDAsString() string {
 }
 
 // SIDAsString as a base 64 string.
-func (o *Offer) SIDAsString() string {
+func (o *Impression) SIDAsString() string {
 	return o.SID.PayloadAsPrintable()
 }
 
 // PreferencesAsString as a base 64 string.
-func (o *Offer) PreferencesAsString() string {
+func (o *Impression) PreferencesAsString() string {
 	return o.Preferences.PayloadAsString()
 }
 
 // StoppedAsArray returns an array of domains that should not be included in
 // bids.
-func (o *Offer) StoppedAsArray() []string {
+func (o *Impression) StoppedAsArray() []string {
 	return o.Stopped
 }
 
 // IsStopped returns true if the URL provided is stopped.
-func (o *Offer) IsStopped(u string) bool {
+func (o *Impression) IsStopped(u string) bool {
 	for _, i := range o.StoppedAsArray() {
 		if strings.EqualFold(u, i) {
 			return true
@@ -82,9 +82,9 @@ func (o *Offer) IsStopped(u string) bool {
 	return false
 }
 
-// OfferFromOWID returns an Offer created from the OWID payload.
-func OfferFromOWID(i *owid.OWID) (*Offer, error) {
-	var o Offer
+// ImpressionFromOWID returns an Impression created from the OWID payload.
+func ImpressionFromOWID(i *owid.OWID) (*Impression, error) {
+	var o Impression
 	buf := bytes.NewBuffer(i.Payload)
 	err := o.setFromBuffer(buf)
 	if err != nil {
@@ -93,9 +93,9 @@ func OfferFromOWID(i *owid.OWID) (*Offer, error) {
 	return &o, nil
 }
 
-// OfferFromNode returns an Offer created from the Node payload.
-func OfferFromNode(n *owid.Node) (*Offer, error) {
-	var o Offer
+// ImpressionFromNode returns an Impression created from the Node payload.
+func ImpressionFromNode(n *owid.Node) (*Impression, error) {
+	var o Impression
 	w, err := n.GetOWID()
 	if err != nil {
 		return nil, err
@@ -108,16 +108,16 @@ func OfferFromNode(n *owid.Node) (*Offer, error) {
 	return &o, nil
 }
 
-// AsByteArray returns the Offer as a byte array.
-func (o *Offer) AsByteArray() ([]byte, error) {
+// AsByteArray returns the Impression as a byte array.
+func (o *Impression) AsByteArray() ([]byte, error) {
 	var buf bytes.Buffer
 	o.writeToBuffer(&buf)
 	return buf.Bytes(), nil
 }
 
-func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
+func (o *Impression) writeToBuffer(f *bytes.Buffer) error {
 	o.base.version = typeVersion
-	o.base.structType = typeOffer
+	o.base.structType = typeImpression
 	err := o.base.writeToBuffer(f)
 	if err != nil {
 		return err
@@ -146,37 +146,41 @@ func (o *Offer) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = writeString(f, strings.Join(o.Stopped, offerStoppedSeparator))
+	err = writeString(f, strings.Join(o.Stopped, impressionStoppedSeparator))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *Offer) setFromBuffer(f *bytes.Buffer) error {
+func (o *Impression) setFromBuffer(f *bytes.Buffer) error {
 	var err error
 	err = o.base.setFromBuffer(f)
 	if err != nil {
 		return err
 	}
-	if o.structType != typeOffer {
+	if o.structType != typeImpression {
 		return fmt.Errorf(
-			"Type %s not valid for %s",
+			"type %s not valid for %s",
 			typeAsString(o.structType),
-			typeAsString(typeOffer))
+			typeAsString(typeImpression))
 	}
 	switch o.base.version {
 	case byte(1):
 		err = o.setFromBufferVersion1(f)
-		break
+		if err != nil {
+			return err
+		}
 	default:
-		err = fmt.Errorf("Version '%d' not supported", o.base.version)
-		break
+		err = fmt.Errorf("version '%d' not supported", o.base.version)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
+func (o *Impression) setFromBufferVersion1(f *bytes.Buffer) error {
 	var err error
 	o.Placement, err = readString(f)
 	if err != nil {
@@ -206,6 +210,6 @@ func (o *Offer) setFromBufferVersion1(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.Stopped = strings.Split(s, offerStoppedSeparator)
+	o.Stopped = strings.Split(s, impressionStoppedSeparator)
 	return nil
 }

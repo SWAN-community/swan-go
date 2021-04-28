@@ -26,10 +26,10 @@ const typeVersion byte = 1
 
 // Type structures that include base.
 const (
-	typeBid    byte = iota
-	typeOffer  byte = iota
-	typeFailed byte = iota
-	typeEmpty  byte = iota
+	typeBid        byte = iota
+	typeImpression byte = iota
+	typeFailed     byte = iota
+	typeEmpty      byte = iota
 )
 
 // base used as the first fields of any SWAN data structure.
@@ -53,26 +53,34 @@ func FromOWID(o *owid.OWID) (interface{}, error) {
 		var v Bid
 		v.base = b
 		err = v.setFromBufferVersion1(f)
+		if err != nil {
+			return nil, err
+		}
 		i = &v
-		break
-	case typeOffer:
-		var v Offer
+	case typeImpression:
+		var v Impression
 		v.base = b
 		err = v.setFromBufferVersion1(f)
+		if err != nil {
+			return nil, err
+		}
 		i = &v
-		break
 	case typeFailed:
 		var v Failed
 		v.base = b
 		err = v.setFromBufferVersion1(f)
+		if err != nil {
+			return nil, err
+		}
 		i = &v
-		break
 	case typeEmpty:
 		var v Empty
 		v.base = b
 		err = v.setFromBuffer(f)
+		if err != nil {
+			return nil, err
+		}
 		i = &v
-		break
 	}
 	return i, nil
 }
@@ -116,8 +124,8 @@ func typeAsString(b byte) string {
 	switch b {
 	case typeBid:
 		return "Bid"
-	case typeOffer:
-		return "Offer"
+	case typeImpression:
+		return "Impression"
 	case typeFailed:
 		return "Failed"
 	case typeEmpty:

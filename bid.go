@@ -55,7 +55,7 @@ func BidFromNode(n *owid.Node) (*Bid, error) {
 	return &b, nil
 }
 
-// AsByteArray returns the Offer as a byte array.
+// AsByteArray returns the Bid as a byte array.
 func (b *Bid) AsByteArray() ([]byte, error) {
 	var f bytes.Buffer
 	b.writeToBuffer(&f)
