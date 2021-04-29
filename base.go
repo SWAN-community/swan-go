@@ -52,34 +52,22 @@ func FromOWID(o *owid.OWID) (interface{}, error) {
 	case typeBid:
 		var v Bid
 		v.base = b
-		err = v.setFromBufferVersion1(f)
-		if err != nil {
-			return nil, err
-		}
+		_ = v.setFromBufferVersion1(f)
 		i = &v
 	case typeImpression:
 		var v Impression
 		v.base = b
-		err = v.setFromBufferVersion1(f)
-		if err != nil {
-			return nil, err
-		}
+		_ = v.setFromBufferVersion1(f)
 		i = &v
 	case typeFailed:
 		var v Failed
 		v.base = b
-		err = v.setFromBufferVersion1(f)
-		if err != nil {
-			return nil, err
-		}
+		_ = v.setFromBufferVersion1(f)
 		i = &v
 	case typeEmpty:
 		var v Empty
 		v.base = b
-		err = v.setFromBuffer(f)
-		if err != nil {
-			return nil, err
-		}
+		_ = v.setFromBuffer(f)
 		i = &v
 	}
 	return i, nil
