@@ -44,7 +44,7 @@ The following variables have the following meaning and type.
 |-|-|-|
 | encrypted | string | base 64 encoded encrypted data returned from a SWAN storage operation |
 | request | *http.Request | http request associated with a user's web browser - used to set the home node |
-| returnUrl | url.URL | the URL to return to after the browser has been directed to the URL provided by the GetURL function |
+| returnUrl | *url.URL | the URL to return to after the browser has been directed to the URL provided by the GetURL function |
 
 ### Fetch
 
@@ -68,10 +68,13 @@ existing values are removed from SWAN.
 
 ```
 u := connection.NewUpdate(request, returnUrl)
+
+// Set the raw SWAN data from the form associated with the request.
 u.Pref = r.Form.Get("pref") == "on"
 u.Email = r.Form.Get("email")
 u.Salt = []byte(r.Form.Get("salt"))
 u.SWID = r.Form.Get("swid")
+
 url := u.GetURL()
 ```
 
@@ -95,7 +98,7 @@ Returns the decrypted SWAN data from the base 64 encoded encrypted data
 provided.
 
 ```
-swanPairs := connection.NewDecrypt(encrypted).Decrypt()
+swanPairs := connection.Decrypt(encrypted)
 ```
 
 ### DecryptRaw
@@ -104,5 +107,23 @@ Returns the decrypted raw SWAN data from the base 64 encoded encrypted data
 provided. Must only be used by User Interface Providers.
 
 ```
-rawPairs := connection.NewDecrypt(encrypted).DecryptRaw()
+rawPairs := connection.DecryptRaw(encrypted)
 ```
+
+### CreateSWID
+
+Returns a new SWID in OWID from from the SWAN Operator. 
+
+```
+swid := connection.CreateSWID()
+```
+
+### HomeNode
+
+Returns the domain of the home node for the web browser associated with the 
+request.
+
+```
+homeNode := connection.HomeNode(request)
+```
+

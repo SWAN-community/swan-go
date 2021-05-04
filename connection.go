@@ -202,8 +202,30 @@ func (s *Stop) GetURL() (string, *Error) {
 	return requestAsString(&s.SWAN, "stop", q)
 }
 
+// Decrypt returns key value pairs for the data contained in the encrypted
+// string.
+func (c *Connection) Decrypt(encrypted string) ([]*Pair, *Error) {
+	return c.NewDecrypt(encrypted).decrypt()
+}
+
+// DecryptRaw returns key value pairs for the raw SWAN data contained in the
+// encrypted string. Must only be used by User Interface Providers.
+func (c *Connection) DecryptRaw(
+	encrypted string) (map[string]interface{}, *Error) {
+	return c.NewDecrypt(encrypted).decryptRaw()
+}
+
+// CreateSWID returns a new SWID in OWID format.
+func (c *Connection) CreateSWID() (*owid.OWID, *Error) {
+	return c.NewSWAN().createSWID()
+}
+
 // HomeNode returns the SWAN home node associated with the web browser.
-func (c *Client) HomeNode() (string, *Error) {
+func (c *Connection) HomeNode(r *http.Request) (string, *Error) {
+	return c.NewClient(r).homeNode()
+}
+
+func (c *Client) homeNode() (string, *Error) {
 	q := url.Values{}
 	err := c.setData(&q)
 	if err != nil {
@@ -212,9 +234,7 @@ func (c *Client) HomeNode() (string, *Error) {
 	return requestAsString(&c.SWAN, "home-node", q)
 }
 
-// Decrypt returns key value pairs for the data contained in the encrypted
-// string.
-func (e *Decrypt) Decrypt() ([]*Pair, *Error) {
+func (e *Decrypt) decrypt() ([]*Pair, *Error) {
 	var p []*Pair
 	q := url.Values{}
 	err := e.setData(&q)
@@ -232,9 +252,7 @@ func (e *Decrypt) Decrypt() ([]*Pair, *Error) {
 	return p, nil
 }
 
-// DecryptRaw returns key value pairs for the raw SWAN data contained in the
-// encrypted string. Must only be used by User Interface Providers.
-func (e *Decrypt) DecryptRaw() (map[string]interface{}, *Error) {
+func (e *Decrypt) decryptRaw() (map[string]interface{}, *Error) {
 	r := make(map[string]interface{})
 	q := url.Values{}
 	err := e.setData(&q)
@@ -252,9 +270,16 @@ func (e *Decrypt) DecryptRaw() (map[string]interface{}, *Error) {
 	return r, nil
 }
 
-func (s *SWAN) CreateSWID() ([]byte, *Error) {
-	q := url.Values{}
-	return requestAsByteArray(s, "create-swid", q)
+func (s *SWAN) createSWID() (*owid.OWID, *Error) {
+	b, se := requestAsByteArray(s, "create-swid", url.Values{})
+	if se != nil {
+		return nil, se
+	}
+	o, err := owid.FromByteArray(b)
+	if err != nil {
+		return nil, &Error{Err: err}
+	}
+	return o, nil
 }
 
 func requestAsByteArray(
