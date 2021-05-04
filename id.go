@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"owid"
 	"strings"
@@ -26,29 +27,36 @@ import (
 )
 
 // Used to separate stopped advert IDs in a single string.
-const impressionStoppedSeparator = "\r"
+const idStoppedSeparator = "\r"
 
-// Impression contains the information about the
-// opportunity to advertise with a publisher. It is created by the SWAN host
-// as an OWID and as such is signed by the SWAN host and not the publisher.
-type Impression struct {
+// ID contains the information about the opportunity to advertise with a
+// publisher. It is created and signed by the SWAN Root Party, typically the
+// publisher or an agent acting on their behalf.
+type ID struct {
 	base
-	Placement   string     // A value assigned by the publisher for the advertisement slot on the web page
-	PubDomain   string     // The domain that the advertisement slot will appear on
-	UUID        []byte     // A unique identifier for this impression
-	SWID        *owid.OWID // The Commmon Browser ID
-	SID         *owid.OWID // The Signed In ID
-	Preferences *owid.OWID // The privacy preferences string
-	Stopped     []string   // List of domains of advert IDs that should not be shown
+	PubDomain   string     // The domain that the advertisements will appear on
+	UUID        []byte     // A unique identifier for this ID
+	SWID        *owid.OWID // The Secure Web ID as an OWID
+	SID         *owid.OWID // The Signed In ID as an OWID
+	Preferences *owid.OWID // The privacy preferences as an OWID
+	Stopped     []string   // List of domains or advert IDs that should not be shown
 }
 
-// Returns a new Impression with the correct version and impression information set.
-func NewImpression() Impression {
-	return Impression{base: base{typeVersion, typeImpression}}
+// Returns a new swan.ID with the correct version and type set as well as random
+// data to ensure unique for all time.
+func NewID() (*ID, error) {
+	uuid, err := uuid.New().MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return &ID{
+		base: base{typeVersion, typeID},
+		UUID: uuid,
+	}, nil
 }
 
 // SWIDAsString as a base 64 string.
-func (o *Impression) SWIDAsString() string {
+func (o *ID) SWIDAsString() string {
 	u, err := uuid.FromBytes(o.SWID.Payload)
 	if err != nil {
 		return o.SWID.PayloadAsPrintable()
@@ -57,23 +65,23 @@ func (o *Impression) SWIDAsString() string {
 }
 
 // SIDAsString as a base 64 string.
-func (o *Impression) SIDAsString() string {
+func (o *ID) SIDAsString() string {
 	return o.SID.PayloadAsPrintable()
 }
 
 // PreferencesAsString as a base 64 string.
-func (o *Impression) PreferencesAsString() string {
+func (o *ID) PreferencesAsString() string {
 	return o.Preferences.PayloadAsString()
 }
 
 // StoppedAsArray returns an array of domains that should not be included in
 // bids.
-func (o *Impression) StoppedAsArray() []string {
+func (o *ID) StoppedAsArray() []string {
 	return o.Stopped
 }
 
 // IsStopped returns true if the URL provided is stopped.
-func (o *Impression) IsStopped(u string) bool {
+func (o *ID) IsStopped(u string) bool {
 	for _, i := range o.StoppedAsArray() {
 		if strings.EqualFold(u, i) {
 			return true
@@ -82,9 +90,9 @@ func (o *Impression) IsStopped(u string) bool {
 	return false
 }
 
-// ImpressionFromOWID returns an Impression created from the OWID payload.
-func ImpressionFromOWID(i *owid.OWID) (*Impression, error) {
-	var o Impression
+// IDFromOWID returns an ID created from the OWID payload.
+func IDFromOWID(i *owid.OWID) (*ID, error) {
+	var o ID
 	buf := bytes.NewBuffer(i.Payload)
 	err := o.setFromBuffer(buf)
 	if err != nil {
@@ -93,9 +101,9 @@ func ImpressionFromOWID(i *owid.OWID) (*Impression, error) {
 	return &o, nil
 }
 
-// ImpressionFromNode returns an Impression created from the Node payload.
-func ImpressionFromNode(n *owid.Node) (*Impression, error) {
-	var o Impression
+// IDFromNode returns an ID created from the Node payload.
+func IDFromNode(n *owid.Node) (*ID, error) {
+	var o ID
 	w, err := n.GetOWID()
 	if err != nil {
 		return nil, err
@@ -108,21 +116,26 @@ func ImpressionFromNode(n *owid.Node) (*Impression, error) {
 	return &o, nil
 }
 
-// AsByteArray returns the Impression as a byte array.
-func (o *Impression) AsByteArray() ([]byte, error) {
+// AsByteArray returns the ID as a byte array.
+func (o *ID) AsByteArray() ([]byte, error) {
 	var buf bytes.Buffer
 	o.writeToBuffer(&buf)
 	return buf.Bytes(), nil
 }
 
-func (o *Impression) writeToBuffer(f *bytes.Buffer) error {
-	o.base.version = typeVersion
-	o.base.structType = typeImpression
-	err := o.base.writeToBuffer(f)
+// AsString returns the ID as a string.
+func (o *ID) AsString() (string, error) {
+	b, err := o.AsByteArray()
 	if err != nil {
-		return err
+		return "", err
 	}
-	err = writeString(f, o.Placement)
+	return base64.RawStdEncoding.EncodeToString(b), nil
+}
+
+func (o *ID) writeToBuffer(f *bytes.Buffer) error {
+	o.base.version = typeVersion
+	o.base.structType = typeID
+	err := o.base.writeToBuffer(f)
 	if err != nil {
 		return err
 	}
@@ -146,24 +159,24 @@ func (o *Impression) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = writeString(f, strings.Join(o.Stopped, impressionStoppedSeparator))
+	err = writeString(f, strings.Join(o.Stopped, idStoppedSeparator))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *Impression) setFromBuffer(f *bytes.Buffer) error {
+func (o *ID) setFromBuffer(f *bytes.Buffer) error {
 	var err error
 	err = o.base.setFromBuffer(f)
 	if err != nil {
 		return err
 	}
-	if o.structType != typeImpression {
+	if o.structType != typeID {
 		return fmt.Errorf(
 			"type %s not valid for %s",
 			typeAsString(o.structType),
-			typeAsString(typeImpression))
+			typeAsString(typeID))
 	}
 	switch o.base.version {
 	case byte(1):
@@ -180,12 +193,8 @@ func (o *Impression) setFromBuffer(f *bytes.Buffer) error {
 	return nil
 }
 
-func (o *Impression) setFromBufferVersion1(f *bytes.Buffer) error {
+func (o *ID) setFromBufferVersion1(f *bytes.Buffer) error {
 	var err error
-	o.Placement, err = readString(f)
-	if err != nil {
-		return err
-	}
 	o.PubDomain, err = readString(f)
 	if err != nil {
 		return err
@@ -210,6 +219,6 @@ func (o *Impression) setFromBufferVersion1(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.Stopped = strings.Split(s, impressionStoppedSeparator)
+	o.Stopped = strings.Split(s, idStoppedSeparator)
 	return nil
 }

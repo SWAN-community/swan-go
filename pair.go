@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"owid"
 	"strings"
-	"swift"
 	"time"
 )
 
@@ -55,16 +54,6 @@ func NewPairFromCookie(c *http.Cookie) *Pair {
 		Key:   n,
 		Value: c.Value,
 	}
-}
-
-// NewPairFromSWIFT creates a new SWAN pair from the SWIFT pair setting the
-// value to the byte array provided.
-func NewPairFromSWIFT(s *swift.Pair, v string) *Pair {
-	return &Pair{
-		Key:     s.Key(),
-		Created: s.Created(),
-		Expires: s.Expires(),
-		Value:   v}
 }
 
 // AsCookie returns the pair as a cookie to be used in an HTTP response.
