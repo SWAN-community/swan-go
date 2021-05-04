@@ -1,7 +1,9 @@
-# swan-go
+# ![Secured Web Addressability Network](https://raw.githubusercontent.com/SWAN-community/swan/main/images/swan.128.pxls.100.dpi.png)
+
+# Secured Web Addressability Network (SWAN) - Go Access Layer
 
 Secure Web Addressability Network (SWAN) - an open source secure and privacy
-supporting cross domain identity network implemented in Go
+supporting cross domain identity network implemented in Go.
 
 ## Introduction
 
