@@ -191,6 +191,24 @@ func (u *Update) GetURL(creator *owid.Creator) (string, *Error) {
 	return requestAsString(&u.SWAN, "update", q)
 }
 
+// GetValues returns the values that can be used to configure a web browser with
+// the information contained in the Update operation. Ensure the access key is
+// not included in the resulting values.
+// creator used to create the OWIDs for the data in the Update structure
+func (u *Update) GetValues(
+	creator *owid.Creator) (url.Values, error) {
+	q := url.Values{}
+	err := u.setData(&q, creator)
+	if err != nil {
+		return nil, err
+	}
+	q.Del("accessKey")
+	q.Del("swid")
+	q.Del("remoteAddr")
+	q.Del("X-Forwarded-For")
+	return q, nil
+}
+
 // GetURL contacts the SWAN operator domain with the access key and returns a
 // URL string that the web browser should be directed to.
 func (s *Stop) GetURL() (string, *Error) {
