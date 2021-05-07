@@ -82,6 +82,7 @@ type Update struct {
 // Fetch operation to retrieve the SWAN data.
 type Fetch struct {
 	Operation
+	Existing []*Pair // Existing SWAN data pairs
 }
 
 // Stop operation to block an advert domain or identifier.
@@ -102,15 +103,22 @@ func NewConnection(operation Operation) *Connection {
 }
 
 // NewFetch creates a new fetch operation using the default in the connection.
+//
 // request http request from a web browser
+//
 // returnUrl return URL after the operation completes
+//
+// existing if any values already exist then use these if none are available in
+// SWAN
 func (c *Connection) NewFetch(
 	request *http.Request,
-	returnUrl *url.URL) *Fetch {
+	returnUrl *url.URL,
+	existing []*Pair) *Fetch {
 	f := Fetch{}
 	f.Operation = c.operation
 	f.Request = request
 	f.ReturnUrl = returnUrl
+	f.Existing = existing
 	return &f
 }
 
@@ -457,6 +465,23 @@ func (o *Operation) setData(q *url.Values) error {
 	q.Set("javaScript", fmt.Sprintf("%t", o.JavaScript))
 	for _, s := range o.State {
 		q.Add("state", s)
+	}
+	return nil
+}
+
+func (f *Fetch) setData(q *url.Values) error {
+	err := f.Operation.setData(q)
+	if err != nil {
+		return err
+	}
+	if f.Existing != nil {
+		for _, v := range f.Existing {
+			_, err := owid.FromBase64(v.Value)
+			if err != nil {
+				return err
+			}
+			q.Set(v.Key, v.Value)
+		}
 	}
 	return nil
 }
