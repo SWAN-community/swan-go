@@ -73,10 +73,10 @@ type Operation struct {
 // swan.CreateSWID.
 type Update struct {
 	Operation
-	SWID  string
-	Pref  bool
-	Email string
-	Salt  []byte
+	SWID  *owid.OWID
+	Pref  *owid.OWID
+	Email *owid.OWID
+	Salt  *owid.OWID
 }
 
 // Fetch operation to retrieve the SWAN data.
@@ -179,12 +179,48 @@ func (f *Fetch) GetURL() (string, *Error) {
 	return requestAsString(&f.SWAN, "fetch", q)
 }
 
+// SetSWID verifies that the base 64 SWID string is an OWID and sets the value.
+func (u *Update) SetSWID(swid string) error {
+	var err error
+	u.SWID, err = owid.FromBase64(swid)
+	return err
+}
+
+// SetEmail turns the email provided into an OWID using the creator associated
+// with the update operation.
+func (u *Update) SetEmail(creator *owid.Creator, email string) error {
+	var err error
+	u.Email, err = creator.CreateOWIDandSign([]byte(email))
+	return err
+}
+
+// SetSalt turns the salt provided into an OWID using the creator associated
+// with the update operation.
+func (u *Update) SetSalt(creator *owid.Creator, salt []byte) error {
+	var err error
+	u.Salt, err = creator.CreateOWIDandSign(salt)
+	return err
+}
+
+// SetPref turns the preference flag provided into an OWID using the creator
+// associated with the update operation.
+func (u *Update) SetPref(creator *owid.Creator, pref bool) error {
+	var err error
+	var s string
+	if pref == true {
+		s = "on"
+	} else {
+		s = "off"
+	}
+	u.Pref, err = creator.CreateOWIDandSign([]byte(s))
+	return err
+}
+
 // GetURL contacts the SWAN operator domain with the access key and returns a
 // URL string that the web browser should be directed to.
-// creator used to create the OWIDs for the data in the Update structure
-func (u *Update) GetURL(creator *owid.Creator) (string, *Error) {
+func (u *Update) GetURL() (string, *Error) {
 	q := url.Values{}
-	err := u.setData(&q, creator)
+	err := u.setData(&q)
 	if err != nil {
 		return "", &Error{Err: err}
 	}
@@ -194,11 +230,9 @@ func (u *Update) GetURL(creator *owid.Creator) (string, *Error) {
 // GetValues returns the values that can be used to configure a web browser with
 // the information contained in the Update operation. Ensure the access key is
 // not included in the resulting values.
-// creator used to create the OWIDs for the data in the Update structure
-func (u *Update) GetValues(
-	creator *owid.Creator) (url.Values, error) {
+func (u *Update) GetValues() (url.Values, error) {
 	q := url.Values{}
-	err := u.setData(&q, creator)
+	err := u.setData(&q)
 	if err != nil {
 		return nil, err
 	}
@@ -427,28 +461,40 @@ func (o *Operation) setData(q *url.Values) error {
 	return nil
 }
 
-func (u *Update) setData(q *url.Values, c *owid.Creator) error {
+func (u *Update) setData(q *url.Values) error {
+	var s string
 	err := u.Operation.setData(q)
 	if err != nil {
 		return err
 	}
-	if u.Pref {
-		err = setSWANData(c, q, "pref", []byte("on"))
-	} else {
-		err = setSWANData(c, q, "pref", []byte("off"))
+	if u.SWID != nil {
+		s, err = u.SWID.AsBase64()
+		if err != nil {
+			return err
+		}
+		q.Set("swid", s)
 	}
-	if err != nil {
-		return err
+	if u.Pref != nil {
+		s, err = u.Pref.AsBase64()
+		if err != nil {
+			return err
+		}
+		q.Set("pref", s)
 	}
-	err = setSWANData(c, q, "email", []byte(u.Email))
-	if err != nil {
-		return err
+	if u.Email != nil {
+		s, err = u.Email.AsBase64()
+		if err != nil {
+			return err
+		}
+		q.Set("email", s)
 	}
-	err = setSWANData(c, q, "salt", u.Salt)
-	if err != nil {
-		return err
+	if u.Salt != nil {
+		s, err = u.Salt.AsBase64()
+		if err != nil {
+			return err
+		}
+		q.Set("salt", s)
 	}
-	q.Set("swid", u.SWID)
 	return nil
 }
 
