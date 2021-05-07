@@ -204,9 +204,9 @@ func (u *Update) SetEmail(creator *owid.Creator, email string) error {
 
 // SetSalt turns the salt provided into an OWID using the creator associated
 // with the update operation.
-func (u *Update) SetSalt(creator *owid.Creator, salt []byte) error {
+func (u *Update) SetSalt(creator *owid.Creator, salt string) error {
 	var err error
-	u.Salt, err = creator.CreateOWIDandSign(salt)
+	u.Salt, err = creator.CreateOWIDandSign([]byte(salt))
 	return err
 }
 
@@ -476,11 +476,13 @@ func (f *Fetch) setData(q *url.Values) error {
 	}
 	if f.Existing != nil {
 		for _, v := range f.Existing {
-			_, err := owid.FromBase64(v.Value)
-			if err != nil {
-				return err
+			if v.Key == "swid" || v.Key == "pref" {
+				_, err := owid.FromBase64(v.Value)
+				if err != nil {
+					return err
+				}
+				q.Set(v.Key, v.Value)
 			}
-			q.Set(v.Key, v.Value)
 		}
 	}
 	return nil
