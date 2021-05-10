@@ -93,10 +93,10 @@ type Operation struct {
 // swan.CreateSWID.
 type Update struct {
 	Operation
-	SWID  *owid.OWID
-	Pref  *owid.OWID
-	Email *owid.OWID
-	Salt  *owid.OWID
+	swid  *owid.OWID
+	pref  *owid.OWID
+	email *owid.OWID
+	salt  *owid.OWID
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
@@ -220,9 +220,12 @@ func (f *Fetch) GetURL() (string, *Error) {
 // swid base 64 encoded SWID
 func (u *Update) SetSWID(swid string) error {
 	var err error
-	u.SWID, err = owid.FromBase64(swid)
+	u.swid, err = owid.FromBase64(swid)
 	return err
 }
+
+// SWID gets the SWID if previously provided via SetSWID.
+func (u *Update) SWID() *owid.OWID { return u.swid }
 
 // SetEmail turns the email provided into an OWID using the creator.
 //
@@ -231,20 +234,40 @@ func (u *Update) SetSWID(swid string) error {
 // email provided by the user
 func (u *Update) SetEmail(creator *owid.Creator, email string) error {
 	var err error
-	u.Email, err = creator.CreateOWIDandSign([]byte(email))
+	u.email, err = creator.CreateOWIDandSign([]byte(email))
 	return err
 }
+
+// SetEmailFromOWID passed a base 64 encoded OWID as the email.
+func (u *Update) SetEmailFromOWID(emailOWID string) error {
+	var err error
+	u.email, err = owid.FromBase64(emailOWID)
+	return err
+}
+
+// Email gets the Email if previously provided via SetEmail.
+func (u *Update) Email() *owid.OWID { return u.email }
 
 // SetSalt turns the salt provided into an OWID using the creator.
 //
 // creator register OWID creator for the User Interface Provider
 //
-// salt instance of salt [TODO]
+// salt instance of salt [TODO - switch from salt string to salt type]
 func (u *Update) SetSalt(creator *owid.Creator, salt string) error {
 	var err error
-	u.Salt, err = creator.CreateOWIDandSign([]byte(salt))
+	u.salt, err = creator.CreateOWIDandSign([]byte(salt))
 	return err
 }
+
+// SetSaltFromOWID passed a base 64 encoded OWID as the salt.
+func (u *Update) SetSaltFromOWID(saltOWID string) error {
+	var err error
+	u.salt, err = owid.FromBase64(saltOWID)
+	return err
+}
+
+// Salt gets the Salt if previously provided via SetSalt.
+func (u *Update) Salt() *owid.OWID { return u.salt }
 
 // SetPref turns the preference flag provided into an OWID using the creator.
 //
@@ -259,9 +282,19 @@ func (u *Update) SetPref(creator *owid.Creator, pref bool) error {
 	} else {
 		s = "off"
 	}
-	u.Pref, err = creator.CreateOWIDandSign([]byte(s))
+	u.pref, err = creator.CreateOWIDandSign([]byte(s))
 	return err
 }
+
+// SetPrefFromOWID passed a base 64 encoded OWID as the preference.
+func (u *Update) SetPrefFromOWID(prefOWID string) error {
+	var err error
+	u.pref, err = owid.FromBase64(prefOWID)
+	return err
+}
+
+// Pref gets the Pref if previously provided via SetPref.
+func (u *Update) Pref() *owid.OWID { return u.pref }
 
 // GetURL contacts the SWAN operator domain with the access key and returns a
 // URL string that the web browser should be directed to.
@@ -540,29 +573,29 @@ func (u *Update) setData(q *url.Values) error {
 	if err != nil {
 		return err
 	}
-	if u.SWID != nil {
-		s, err = u.SWID.AsBase64()
+	if u.swid != nil {
+		s, err = u.swid.AsBase64()
 		if err != nil {
 			return err
 		}
 		q.Set("swid", s)
 	}
-	if u.Pref != nil {
-		s, err = u.Pref.AsBase64()
+	if u.pref != nil {
+		s, err = u.pref.AsBase64()
 		if err != nil {
 			return err
 		}
 		q.Set("pref", s)
 	}
-	if u.Email != nil {
-		s, err = u.Email.AsBase64()
+	if u.email != nil {
+		s, err = u.email.AsBase64()
 		if err != nil {
 			return err
 		}
 		q.Set("email", s)
 	}
-	if u.Salt != nil {
-		s, err = u.Salt.AsBase64()
+	if u.salt != nil {
+		s, err = u.salt.AsBase64()
 		if err != nil {
 			return err
 		}

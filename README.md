@@ -35,7 +35,7 @@ values can be overridden for each fetch and update storage operation.
 The following code shows how this would be achieved where an instance of the 
 structure swan.Operation provides the default values to use.
 
-```
+```go
 connection := swan.NewConnection(swan.Operation{
     Client: swan.Client{
         SWAN: swan.SWAN{
@@ -77,7 +77,7 @@ Provides a URL that the browser should be immediately directed to. The return
 URL will have the encrypted SWAN data appended ready to be used with the decrypt
 functions.
 
-```
+```go
 url := connection.NewFetch(request, returnUrl).GetURL()
 ```
 
@@ -85,21 +85,41 @@ url := connection.NewFetch(request, returnUrl).GetURL()
 
 Provides a URL that the browser should be immediately directed to. The return
 URL will have the encrypted SWAN data appended ready to be used with the decrypt
-functions.
+functions. 
+
+Note: The return URL and optional Access Node could have been passed by the
+publisher to the User Interface Provider in the state array of the original 
+Fetch operation. See the SWAN demo for passing data between different parties
+via the Operation.State array parameter.
 
 The members Pref, Email, Salt and SWID should be set to the values provided by 
 the user before the GetURL function is called. If they are left blank the 
 existing values are removed from SWAN.
 
-```
+```go
+
+// Get the OWID creator which is needed to sign the raw SWAN data.
+creator, err := YourGetOWIDCreator()
+if err != nil { return err }
+
+// Create a new Update operation with the request from the web browser and the
+// return URL.
 u := connection.NewUpdate(request, returnUrl)
 
-// Set the raw SWAN data from the form associated with the request.
-u.Pref = r.Form.Get("pref") == "on"
-u.Email = r.Form.Get("email")
-u.Salt = []byte(r.Form.Get("salt"))
-u.SWID = r.Form.Get("swid")
+// Set the raw SWAN data from the form associated with the request. Pass the 
+// OWID creator to each of the methods that generates an OWID. Check the err
+// indicator incase there was a problem generating the OWID from the input data
+// if if the input data did not pass validation.
+err = u.SetPref(creator, r.Form.Get("pref") == "on")
+if err != nil { return err }
+err = u.SetEmail(creator, r.Form.Get("email"))
+if err != nil { return err }
+err = u.SetSalt(creator, r.Form.Get("salt"))
+if err != nil { return err }
+err = u.SetSWID(creator, r.Form.Get("swid"))
+if err != nil { return err }
 
+// Get the storage operation URL to redirect the web browser to.
 url := u.GetURL()
 ```
 
@@ -112,7 +132,7 @@ functions.
 The host parameter is the host domain associated with the advert that should be
 stopped.
 
-```
+```go
 host := r.Form.Get("host")
 url := connection.NewSWANStop(r, returnUrl, host).GetURL()
 ```
@@ -122,7 +142,7 @@ url := connection.NewSWANStop(r, returnUrl, host).GetURL()
 Returns the decrypted SWAN data from the base 64 encoded encrypted data 
 provided.
 
-```
+```go
 swanPairs := connection.Decrypt(encrypted)
 ```
 
@@ -178,7 +198,7 @@ Returns the decrypted raw SWAN data as a map of string keys to values from the
 base 64 encoded encrypted data provided. Must only be used by User Interface 
 Providers to update SWAN data.
 
-```
+```go
 raw := connection.DecryptRaw(encrypted)
 ```
 
@@ -206,7 +226,7 @@ Example result.
 Returns a new SWID in OWID from from the SWAN Operator. Only SWAN operators can
 create SWIDs.
 
-```
+```go
 swid := connection.CreateSWID()
 ```
 
@@ -215,6 +235,6 @@ swid := connection.CreateSWID()
 Returns the domain of the home node for the web browser associated with the 
 request.
 
-```
+```go
 homeNode := connection.HomeNode(request)
 ```
