@@ -11,36 +11,59 @@ This project contains all the server side components that are needed to
 implement SWAN in Go for a publisher, Consent Management Platform (CMP) or
 OpenRTB party.
 
+The project wraps calls to SWAN API endpoints in a simple to use data model. A
+connection is used to configure the mandatory parameters such as the host domain
+for the SWAN Operator access node, access keys and default optional parameters
+such as the message to display to the user when performing multiple node storage
+operations. 
+
+Once the connection is created functions prefixed New are used to initiate 
+storage operations to fetch and update SWAN data. Methods to decrypt SWAN data 
+are provided directly by the swan.Connection structure.
+
+## Prerequisites
+
+The reader should be familiar with the 
+[SWAN concepts](https://github.com/SWAN-community/swan).
+
 ## Connection
 
-An instance of a swan.Connection is created via a call to swan.NewConnection. 
-The following code shows how this would be achieved where an instance of a 
-struct d contains members that relate to swan.Operation members.
+An instance of a swan.Connection is created via a call to swan.NewConnection.
+The default values to use for operations are provided to this method. These 
+values can be overridden for each fetch and update storage operation. 
+
+The following code shows how this would be achieved where an instance of the 
+structure swan.Operation provides the default values to use.
 
 ```
 connection := swan.NewConnection(swan.Operation{
     Client: swan.Client{
         SWAN: swan.SWAN{
-            AccessKey: d.SwanAccessKey,
-            Operator:  d.SwanAccessNode,
-            Scheme:    d.SwanScheme}},
-    BackgroundColor:       d.SwanBackgroundColor,
-    Message:               d.SwanMessage,
-    MessageColor:          d.SwanMessageColor,
-    ProgressColor:         d.SwanProgressColor,
-    NodeCount:             d.SwanNodeCount,
-    DisplayUserInterface:  d.SwanDisplayUserInterface,
-    PostMessageOnComplete: d.SwanPostMessage,
-    JavaScript:            d.SwanJavaScript,
-    UseHomeNode:           d.SwanUseHomeNode})
+            AccessKey: "AccessKey",
+            Operator:  "swan-access-node.org",
+            Scheme:    "https"}},
+    BackgroundColor:       "white",
+    Message:               "Hello. SWAN operation in progress",
+    MessageColor:          "Green",
+    ProgressColor:         "Blue",
+    NodeCount:             10,
+    DisplayUserInterface:  true,
+    PostMessageOnComplete: false,
+    JavaScript:            false,
+    UseHomeNode:           true})
 ```
+
+See the 
+[Go source code](https://github.com/SWAN-community/swan-go/blob/main/connection.go)
+for the meaning of the different parameters.
 
 ## Operations
 
 Once the connection is created with the defaults to be used for all requests
 to SWAN the following operations are supported.
 
-The following variables have the following meaning and type.
+In describing the operations available the following common variables and used
+and have the following meaning type.
 
 | Name | Type | Description |
 |-|-|-|
@@ -103,18 +126,85 @@ provided.
 swanPairs := connection.Decrypt(encrypted)
 ```
 
+Example result in JSON format prior to conversion to SWAN pairs.
+
+```json
+[
+    {
+        "Key": "pref",
+        "Created": "2021-05-10T00:00:00Z",
+        "Expires": "2021-08-05T00:00:00Z",
+        "Value": "AmNtcC...m23avB"
+    },
+    {
+        "Key": "sid",
+        "Created": "2021-05-07T00:00:00Z",
+        "Expires": "2021-08-05T00:00:00Z",
+        "Value": "AjUxZG...2an7jM"
+    },
+    {
+        "Key": "stop",
+        "Created": "2021-05-10T00:00:00Z",
+        "Expires": "2086-08-03T00:00:00Z",
+        "Value": "cool-creams.uk cool-bikes.uk"
+    },
+    {
+        "Key": "swid",
+        "Created": "2021-05-10T00:00:00Z",
+        "Expires": "2021-08-05T00:00:00Z",
+        "Value": "AjUxZGI...xjtRBQ"
+    },
+    {
+        "Key": "val",
+        "Created": "2021-05-10T09:15:42.7843197Z",
+        "Expires": "2086-08-03T00:00:00Z",
+        "Value": "2021-05-10T09:31:42Z"
+    }
+]
+```
+
+The returned keys map to the SWAN data. 
+
+The keys `swid`, `sid` and `pref` are OWIDs. 
+
+The key `val` contains the time when the caller should revalidate the SWAN data
+with SWAN via a call to Fetch. It is possible another tab in the same web
+browser has been used to update the SWAN data and the current domain will not be
+aware of these changes until it validates the data is still current.
+
 ### DecryptRaw
 
-Returns the decrypted raw SWAN data from the base 64 encoded encrypted data 
-provided. Must only be used by User Interface Providers.
+Returns the decrypted raw SWAN data as a map of string keys to values from the 
+base 64 encoded encrypted data provided. Must only be used by User Interface 
+Providers to update SWAN data.
 
 ```
-rawPairs := connection.DecryptRaw(encrypted)
+raw := connection.DecryptRaw(encrypted)
+```
+
+Example result.
+
+```json
+{
+    "backgroundColor": "#f5f5f5",
+    "email": "test@test.com",
+    "message": "Hang tight. We're getting things ready.",
+    "messageColor": "darkslategray",
+    "pref": "off",
+    "progressColor": "darkgreen",
+    "salt": "qqo",
+    "state": [
+        "Example state"
+    ],
+    "swid": "AjUxZGIudWsAgdMK...TaK/AWD4tDXxjtRBQ",
+    "title": "SWAN Demo"
+}
 ```
 
 ### CreateSWID
 
-Returns a new SWID in OWID from from the SWAN Operator. 
+Returns a new SWID in OWID from from the SWAN Operator. Only SWAN operators can
+create SWIDs.
 
 ```
 swid := connection.CreateSWID()
@@ -128,4 +218,3 @@ request.
 ```
 homeNode := connection.HomeNode(request)
 ```
-

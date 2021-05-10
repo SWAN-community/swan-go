@@ -53,19 +53,39 @@ type Client struct {
 // involving a URL that is requested by the web browser.
 type Operation struct {
 	Client
-	ReturnUrl             *url.URL
-	AccessNode            string
-	Title                 string
-	Message               string
-	ProgressColor         string
-	BackgroundColor       string
-	MessageColor          string
-	NodeCount             int
-	DisplayUserInterface  bool
+	// The URL to return to with the encrypted data appended to it.
+	ReturnUrl *url.URL
+	// The access node that will be used to decrypt the result of the storage
+	// operation. Defaults to the access node that started the storage
+	// operation.
+	AccessNode      string
+	Title           string // The title of the progress UI page.
+	Message         string // The text of the message in the progress UI.
+	ProgressColor   string // The HTML color for the progress indicator.
+	BackgroundColor string // The HTML color for the progress UI background.
+	MessageColor    string // The HTML color for the message text.
+	NodeCount       int    // Number of storage nodes to use for operations.
+	// DisplayUserInterface true if a progress UI should be displayed during the
+	// storage operation, otherwise false.
+	DisplayUserInterface bool
+	// PostMessageOnComplete true if at the end of the operation the resulting
+	// data should be returned to the parent using JavaScript postMessage,
+	// otherwise false. Default false.
 	PostMessageOnComplete bool
-	UseHomeNode           bool
-	JavaScript            bool
-	State                 []string
+	// UseHomeNode true if the home node can be used if it contains current
+	// data. False if the SWAN network should be consulted irrespective of the
+	// state of data held on the home node. Default true.
+	UseHomeNode bool
+	// JavaScript true if the response for storage operations should be
+	// JavaScript include that will continue the operation. This feature
+	// requires cookies to be sent for DOM inserted JavaScript elements. Default
+	// false.
+	JavaScript bool
+	// Optional array of strings that can be used to pass state information to
+	// the party that retrieves the results of the storage operation. For
+	// example; passing information between a Publisher and User Interface
+	// Provider such as a CMP in the storage operation.
+	State []string
 }
 
 // Update operation from a User Interface Provider where the preferences, email
@@ -79,7 +99,8 @@ type Update struct {
 	Salt  *owid.OWID
 }
 
-// Fetch operation to retrieve the SWAN data.
+// Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
+// DecryptRaw.
 type Fetch struct {
 	Operation
 	Existing []*Pair // Existing SWAN data pairs
@@ -91,8 +112,8 @@ type Stop struct {
 	Host string // Advert host to block
 }
 
-// Connection stores the static details that are used when creating a new
-// swan request.
+// Connection stores the static details that are used when creating a new swan
+// request.
 type Connection struct {
 	operation Operation
 }
@@ -123,7 +144,9 @@ func (c *Connection) NewFetch(
 }
 
 // NewUpdate creates a new fetch operation using the default in the connection.
+//
 // request http request from a web browser
+//
 // returnUrl return URL after the operation completes
 func (c *Connection) NewUpdate(
 	request *http.Request,
@@ -136,8 +159,11 @@ func (c *Connection) NewUpdate(
 }
 
 // NewStop creates a new stop operation using the default in the connection.
+//
 // request http request from a web browser
+//
 // returnUrl return URL after the operation completes
+//
 // host associated with the advert to stop
 func (c *Connection) NewStop(
 	request *http.Request,
@@ -152,6 +178,7 @@ func (c *Connection) NewStop(
 }
 
 // NewClient creates a new request.
+//
 // request http request from a web browser
 func (c *Connection) NewClient(request *http.Request) *Client {
 	l := Client{}
@@ -162,7 +189,8 @@ func (c *Connection) NewClient(request *http.Request) *Client {
 
 // NewDecrypt creates a new decrypt request using the default in the
 // connection.
-// encrypted the base 64 encoded data to be decrypted
+//
+// encrypted the base 64 encoded SWAN data to be decrypted
 func (c *Connection) NewDecrypt(encrypted string) *Decrypt {
 	e := Decrypt{}
 	e.SWAN = c.operation.SWAN
@@ -177,7 +205,7 @@ func (c *Connection) NewSWAN() *SWAN {
 }
 
 // GetURL contacts the SWAN operator domain with the access key and returns a
-// URL string that the web browser should be directed to.
+// URL string that the web browser should be immediately directed to.
 func (f *Fetch) GetURL() (string, *Error) {
 	q := url.Values{}
 	err := f.setData(&q)
@@ -188,30 +216,41 @@ func (f *Fetch) GetURL() (string, *Error) {
 }
 
 // SetSWID verifies that the base 64 SWID string is an OWID and sets the value.
+//
+// swid base 64 encoded SWID
 func (u *Update) SetSWID(swid string) error {
 	var err error
 	u.SWID, err = owid.FromBase64(swid)
 	return err
 }
 
-// SetEmail turns the email provided into an OWID using the creator associated
-// with the update operation.
+// SetEmail turns the email provided into an OWID using the creator.
+//
+// creator register OWID creator for the User Interface Provider
+//
+// email provided by the user
 func (u *Update) SetEmail(creator *owid.Creator, email string) error {
 	var err error
 	u.Email, err = creator.CreateOWIDandSign([]byte(email))
 	return err
 }
 
-// SetSalt turns the salt provided into an OWID using the creator associated
-// with the update operation.
+// SetSalt turns the salt provided into an OWID using the creator.
+//
+// creator register OWID creator for the User Interface Provider
+//
+// salt instance of salt [TODO]
 func (u *Update) SetSalt(creator *owid.Creator, salt string) error {
 	var err error
 	u.Salt, err = creator.CreateOWIDandSign([]byte(salt))
 	return err
 }
 
-// SetPref turns the preference flag provided into an OWID using the creator
-// associated with the update operation.
+// SetPref turns the preference flag provided into an OWID using the creator.
+//
+// creator register OWID creator for the User Interface Provider
+//
+// pref indicator of personalized marketing
 func (u *Update) SetPref(creator *owid.Creator, pref bool) error {
 	var err error
 	var s string
@@ -236,16 +275,18 @@ func (u *Update) GetURL() (string, *Error) {
 }
 
 // GetValues returns the values that can be used to configure a web browser with
-// the information contained in the Update operation. Ensure the access key is
-// not included in the resulting values.
+// the information contained in the Update operation. Ensure the access key and
+// other values that are specific to an operation are not included in the
+// resulting values.
 func (u *Update) GetValues() (url.Values, error) {
 	q := url.Values{}
 	err := u.setData(&q)
 	if err != nil {
 		return nil, err
 	}
-	q.Del("accessKey")
-	q.Del("swid")
+	q.Del("accessKey") // Known only to this party and must never be shared
+	q.Del("swid")      // Not to be shared with other browsers
+	// Used for home node operations that depend on the specific browser
 	q.Del("remoteAddr")
 	q.Del("X-Forwarded-For")
 	return q, nil
@@ -262,7 +303,7 @@ func (s *Stop) GetURL() (string, *Error) {
 	return requestAsString(&s.SWAN, "stop", q)
 }
 
-// Decrypt returns key value pairs for the data contained in the encrypted
+// Decrypt returns SWAN key value pairs for the data contained in the encrypted
 // string.
 func (c *Connection) Decrypt(encrypted string) ([]*Pair, *Error) {
 	return c.NewDecrypt(encrypted).decrypt()
@@ -275,7 +316,8 @@ func (c *Connection) DecryptRaw(
 	return c.NewDecrypt(encrypted).decryptRaw()
 }
 
-// CreateSWID returns a new SWID in OWID format.
+// CreateSWID returns a new SWID in OWID format from the SWAN Operator. Only
+// SWAN Operators can create legitimate SWIDs.
 func (c *Connection) CreateSWID() (*owid.OWID, *Error) {
 	return c.NewSWAN().createSWID()
 }
