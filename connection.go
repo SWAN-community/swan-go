@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"owid"
+	"salt"
 	"swift"
 )
 
@@ -252,10 +253,10 @@ func (u *Update) Email() *owid.OWID { return u.email }
 //
 // creator register OWID creator for the User Interface Provider
 //
-// salt instance of salt [TODO - switch from salt string to salt type]
-func (u *Update) SetSalt(creator *owid.Creator, salt string) error {
+// salt instance of salt
+func (u *Update) SetSalt(creator *owid.Creator, salt *salt.Salt) error {
 	var err error
-	u.salt, err = creator.CreateOWIDandSign([]byte(salt))
+	u.salt, err = creator.CreateOWIDandSign(salt.GetBytes())
 	return err
 }
 
