@@ -54,7 +54,7 @@ type Client struct {
 type Operation struct {
 	Client
 	// The URL to return to with the encrypted data appended to it.
-	ReturnUrl *url.URL
+	ReturnUrl string
 	// The access node that will be used to decrypt the result of the storage
 	// operation. Defaults to the access node that started the storage
 	// operation.
@@ -133,7 +133,7 @@ func NewConnection(operation Operation) *Connection {
 // SWAN
 func (c *Connection) NewFetch(
 	request *http.Request,
-	returnUrl *url.URL,
+	returnUrl string,
 	existing []*Pair) *Fetch {
 	f := Fetch{}
 	f.Operation = c.operation
@@ -150,7 +150,7 @@ func (c *Connection) NewFetch(
 // returnUrl return URL after the operation completes
 func (c *Connection) NewUpdate(
 	request *http.Request,
-	returnUrl *url.URL) *Update {
+	returnUrl string) *Update {
 	p := Update{}
 	p.Operation = c.operation
 	p.Request = request
@@ -167,7 +167,7 @@ func (c *Connection) NewUpdate(
 // host associated with the advert to stop
 func (c *Connection) NewStop(
 	request *http.Request,
-	returnUrl *url.URL,
+	returnUrl string,
 	host string) *Stop {
 	s := Stop{}
 	s.Operation = c.operation
@@ -474,10 +474,14 @@ func (o *Operation) setData(q *url.Values) error {
 	if err != nil {
 		return err
 	}
-	if o.ReturnUrl == nil {
+	if o.ReturnUrl == "" {
 		return fmt.Errorf("ReturnURL required")
 	}
-	q.Set("returnUrl", o.ReturnUrl.String())
+	_, err = url.Parse(o.ReturnUrl)
+	if err != nil {
+		return err
+	}
+	q.Set("returnUrl", o.ReturnUrl)
 	if o.AccessNode != "" {
 		q.Set("accessNode", o.AccessNode)
 	}
