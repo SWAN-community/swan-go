@@ -256,7 +256,11 @@ func (u *Update) Email() *owid.OWID { return u.email }
 // salt instance of salt
 func (u *Update) SetSalt(creator *owid.Creator, salt *salt.Salt) error {
 	var err error
-	u.salt, err = creator.CreateOWIDandSign(salt.GetBytes())
+	var b []byte
+	if salt != nil {
+		b = salt.GetBytes()
+	}
+	u.salt, err = creator.CreateOWIDandSign(b)
 	return err
 }
 
