@@ -151,13 +151,20 @@ func (o *ID) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = o.SID.ToBuffer(f)
-	if err != nil {
-		return err
-	}
 	err = o.Preferences.ToBuffer(f)
 	if err != nil {
 		return err
+	}
+	if o.SID != nil {
+		err = o.SID.ToBuffer(f)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = owid.EmptyToBuffer(f)
+		if err != nil {
+			return err
+		}
 	}
 	err = writeString(f, strings.Join(o.Stopped, idStoppedSeparator))
 	if err != nil {
@@ -207,11 +214,11 @@ func (o *ID) setFromBufferVersion1(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	o.SID, err = owid.FromBuffer(f)
+	o.Preferences, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}
-	o.Preferences, err = owid.FromBuffer(f)
+	o.SID, err = owid.FromBuffer(f)
 	if err != nil {
 		return err
 	}
