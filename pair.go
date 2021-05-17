@@ -73,8 +73,9 @@ func (p *Pair) AsCookie(
 	}
 }
 
-// AsOWID returns the Value as an OWID structure. Used for SWID, SID and
-// Preferences. If the Value is not an OWID then an error is returned.
+// AsOWID returns the Value as an OWID structure. Used for SWID, SID,
+// Preferences and tcString. If the Value is not an OWID then an error is
+// returned.
 func (p *Pair) AsOWID() (*owid.OWID, error) {
 	return owid.FromBase64(p.Value)
 }

@@ -89,14 +89,15 @@ type Operation struct {
 }
 
 // Update operation from a User Interface Provider where the preferences, email
-// and salt have been captured. The SWID is returned from a previous call to
-// swan.CreateSWID.
+// salt and potentially the tcString have been captured. The SWID is returned
+// from a previous call to swan.CreateSWID.
 type Update struct {
 	Operation
-	swid  *owid.OWID
-	pref  *owid.OWID
-	email *owid.OWID
-	salt  *owid.OWID
+	swid     *owid.OWID
+	pref     *owid.OWID
+	email    *owid.OWID
+	salt     *owid.OWID
+	tcString *owid.OWID
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
@@ -295,6 +296,27 @@ func (u *Update) SetPrefFromOWID(prefOWID string) error {
 
 // Pref gets the Pref if previously provided via SetPref.
 func (u *Update) Pref() *owid.OWID { return u.pref }
+
+// SetTcString turns the tcString provided into an OWID using the creator.
+//
+// creator register OWID creator for the User Interface Provider
+//
+// tcString TCF data
+func (u *Update) SetTcString(creator *owid.Creator, tcString string) error {
+	var err error
+	u.tcString, err = creator.CreateOWIDandSign([]byte(tcString))
+	return err
+}
+
+// SetTcStringFromOWID passed a base 64 encoded OWID as the tcString.
+func (u *Update) SetTcStringFromOWID(tcStringOWID string) error {
+	var err error
+	u.tcString, err = owid.FromBase64(tcStringOWID)
+	return err
+}
+
+// TcString gets the tcString if previously provided via SetTcString.
+func (u *Update) TcString() *owid.OWID { return u.tcString }
 
 // GetURL contacts the SWAN operator domain with the access key and returns a
 // URL string that the web browser should be directed to.
@@ -555,7 +577,7 @@ func (f *Fetch) setData(q *url.Values) error {
 	}
 	if f.Existing != nil {
 		for _, v := range f.Existing {
-			if v.Key == "swid" || v.Key == "pref" {
+			if v.Key == "swid" || v.Key == "pref" || v.Key == "tcString" {
 				_, err := owid.FromBase64(v.Value)
 				if err != nil {
 					return err
@@ -600,6 +622,13 @@ func (u *Update) setData(q *url.Values) error {
 			return err
 		}
 		q.Set("salt", s)
+	}
+	if u.tcString != nil {
+		s, err = u.tcString.AsBase64()
+		if err != nil {
+			return err
+		}
+		q.Set("tcString", s)
 	}
 	return nil
 }

@@ -40,6 +40,7 @@ type ID struct {
 	SID         *owid.OWID // The Signed In ID as an OWID
 	Preferences *owid.OWID // The privacy preferences as an OWID
 	Stopped     []string   // List of domains or advert IDs that should not be shown
+	TcString    *owid.OWID // TCF data as an OWID
 }
 
 // Returns a new swan.ID with the correct version and type set as well as random
@@ -88,6 +89,11 @@ func (o *ID) IsStopped(u string) bool {
 		}
 	}
 	return false
+}
+
+// TcStringAsString as a base 64 string.
+func (o *ID) TcStringAsString() string {
+	return o.TcString.PayloadAsString()
 }
 
 // IDFromOWID returns an ID created from the OWID payload.
@@ -170,6 +176,17 @@ func (o *ID) writeToBuffer(f *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
+	if o.TcString != nil {
+		err = o.TcString.ToBuffer(f)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = owid.EmptyToBuffer(f)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -227,5 +244,9 @@ func (o *ID) setFromBufferVersion1(f *bytes.Buffer) error {
 		return err
 	}
 	o.Stopped = strings.Split(s, idStoppedSeparator)
+	o.TcString, err = owid.FromBuffer(f)
+	if err != nil {
+		return err
+	}
 	return nil
 }
