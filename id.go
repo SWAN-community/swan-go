@@ -129,7 +129,7 @@ func (o *ID) AsString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return base64.RawStdEncoding.EncodeToString(b), nil
+	return base64.StdEncoding.EncodeToString(b), nil
 }
 
 func (o *ID) writeToBuffer(f *bytes.Buffer) error {
