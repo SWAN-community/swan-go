@@ -19,7 +19,8 @@ package swan
 import (
 	"bytes"
 	"fmt"
-	"owid"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // Failed contains details about the request that was not signed by the

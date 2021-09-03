@@ -22,8 +22,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"owid"
-	"swift"
+
+	"github.com/SWAN-community/swift-go"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // SWAN is the base structure for all actions. It includes the scheme for the

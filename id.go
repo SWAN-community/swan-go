@@ -20,8 +20,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"owid"
 	"strings"
+
+	"github.com/SWAN-community/owid-go"
 
 	"github.com/google/uuid"
 )

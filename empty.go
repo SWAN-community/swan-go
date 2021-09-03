@@ -18,7 +18,8 @@ package swan
 
 import (
 	"bytes"
-	"owid"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // Empty contains nothing. Used for most OWIDs that just sign the root and

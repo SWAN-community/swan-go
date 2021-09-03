@@ -18,9 +18,10 @@ package swan
 
 import (
 	"net/http"
-	"owid"
 	"strings"
 	"time"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // Prefix added to the key for any SWAN values stored by the caller as cookies.

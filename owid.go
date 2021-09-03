@@ -18,7 +18,8 @@ package swan
 
 import (
 	"fmt"
-	"owid"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // WinningOWID gets the winning OWID.

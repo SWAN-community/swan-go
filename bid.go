@@ -19,7 +19,8 @@ package swan
 import (
 	"bytes"
 	"fmt"
-	"owid"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // Bid contains the information about the advert to be displayed.

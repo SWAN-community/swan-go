@@ -18,7 +18,8 @@ package swan
 
 import (
 	"bytes"
-	"owid"
+
+	"github.com/SWAN-community/owid-go"
 )
 
 // Version used for persisting SWAN data structures.
