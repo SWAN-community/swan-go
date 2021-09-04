@@ -1,4 +1,4 @@
-module swan
+module github.com/SWAN-community/swan-go
 
 go 1.17
 
