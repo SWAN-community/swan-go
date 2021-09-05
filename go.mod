@@ -3,7 +3,7 @@ module github.com/SWAN-community/swan-go
 go 1.17
 
 require (
-	github.com/SWAN-community/owid-go v0.1.2
+	github.com/SWAN-community/owid-go v0.1.3
 	github.com/SWAN-community/swift-go v0.1.4
 	github.com/google/uuid v1.3.0
 )
