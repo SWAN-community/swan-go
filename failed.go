@@ -16,88 +16,10 @@
 
 package swan
 
-import (
-	"bytes"
-	"fmt"
-
-	"github.com/SWAN-community/owid-go"
-)
-
 // Failed contains details about the request that was not signed by the
 // recipient.
 type Failed struct {
-	base
-	Host  string // The domain that did not respond.
-	Error string // The error message to add to the tree.
-}
-
-// FailedFromOWID returns a Failed created from the OWID payload.
-func FailedFromOWID(i *owid.OWID) (*Failed, error) {
-	var n Failed
-	f := bytes.NewBuffer(i.Payload)
-	err := n.setFromBuffer(f)
-	if err != nil {
-		return nil, err
-	}
-	return &n, nil
-}
-
-// AsByteArray returns the Failed as a byte array.
-func (n *Failed) AsByteArray() ([]byte, error) {
-	var f bytes.Buffer
-	n.writeToBuffer(&f)
-	return f.Bytes(), nil
-}
-
-func (n *Failed) writeToBuffer(f *bytes.Buffer) error {
-	n.version = typeVersion
-	n.structType = typeFailed
-	err := n.base.writeToBuffer(f)
-	if err != nil {
-		return err
-	}
-	err = writeString(f, n.Host)
-	if err != nil {
-		return err
-	}
-	err = writeString(f, n.Error)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (n *Failed) setFromBuffer(f *bytes.Buffer) error {
-	err := n.base.setFromBuffer(f)
-	if err != nil {
-		return err
-	}
-	if n.structType != typeFailed {
-		return fmt.Errorf(
-			"Type %s not valid for %s",
-			typeAsString(n.structType),
-			typeAsString(typeFailed))
-	}
-	switch n.base.version {
-	case byte(1):
-		err = n.setFromBufferVersion1(f)
-		break
-	default:
-		err = fmt.Errorf("Version '%d' not supported", n.base.version)
-		break
-	}
-	return err
-}
-
-func (n *Failed) setFromBufferVersion1(f *bytes.Buffer) error {
-	var err error
-	n.Host, err = readString(f)
-	if err != nil {
-		return err
-	}
-	n.Error, err = readString(f)
-	if err != nil {
-		return err
-	}
-	return nil
+	Base
+	Host  string `json:"host"`  // The domain that did not respond.
+	Error string `json:"error"` // The error message to add to the tree.
 }

@@ -16,8 +16,10 @@
 
 package swan
 
-// Empty contains nothing. Used for most OWIDs that just sign the root and
-// themselves.
-type Empty struct {
-	Response
-}
+// The version to use when creating SWAN instances.
+const swanVersion byte = 1
+
+// The character used to separate fields when building byte arrays for signing.
+// See OneKey signature specification.
+// https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/security-signatures.md
+const oneKeyFieldSeparator = "\u2063"

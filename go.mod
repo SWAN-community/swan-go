@@ -1,8 +1,9 @@
 module github.com/SWAN-community/swan-go
 
-go 1.17
+go 1.19
 
 require (
+	github.com/SWAN-community/common-go v0.1.0
 	github.com/SWAN-community/owid-go v0.1.6
 	github.com/SWAN-community/swift-go v0.1.5
 	github.com/google/uuid v1.3.0
@@ -20,6 +21,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.0 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/SWAN-community/access-go v0.0.0-00010101000000-000000000000 // indirect
 	github.com/SWAN-community/config-go v0.1.4 // indirect
 	github.com/aws/aws-sdk-go v1.35.28 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
@@ -28,6 +30,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
@@ -58,4 +61,12 @@ require (
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+replace (
+	github.com/SWAN-community/access-go => ../access
+	github.com/SWAN-community/common-go => ../common
+	github.com/SWAN-community/config-go => ../config
+	github.com/SWAN-community/owid-go => ../owid
+	github.com/SWAN-community/swift-go => ../swift
 )

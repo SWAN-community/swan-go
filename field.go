@@ -16,8 +16,9 @@
 
 package swan
 
-// Empty contains nothing. Used for most OWIDs that just sign the root and
-// themselves.
-type Empty struct {
-	Response
+// Field type
+type Field interface {
+
+	// Returns the field as a base64 string.
+	ToBase64() (string, error)
 }

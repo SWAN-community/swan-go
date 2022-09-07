@@ -17,11 +17,12 @@
 package swan
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/gob"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/SWAN-community/owid-go"
 )
 
 // Prefix added to the key for any SWAN values stored by the caller as cookies.
@@ -34,7 +35,7 @@ type Pair struct {
 	Created time.Time // The UTC time when the value was created
 	// The UTC time when the value will expire and should not be used
 	Expires time.Time
-	Value   string // The value for the key as a string
+	Value   interface{} // The value associated with the key
 }
 
 // CookieName name for any cookie associated with the SWAN pair.
@@ -46,38 +47,42 @@ func IsSWANCookie(c *http.Cookie) bool {
 }
 
 // NewPairFromCookie creates a new SWAN pair from the cookie.
-func NewPairFromCookie(c *http.Cookie) *Pair {
+func NewPairFromCookie(c *http.Cookie) (*Pair, error) {
 	n := c.Name
 	if IsSWANCookie(c) {
 		n = c.Name[len(cookiePrefix):]
 	}
-	return &Pair{
-		Key:   n,
-		Value: c.Value,
+	b, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		return nil, err
 	}
+	p := Pair{Key: n}
+	err = gob.NewDecoder(bytes.NewBuffer(b)).Decode(p.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
 
 // AsCookie returns the pair as a cookie to be used in an HTTP response.
 func (p *Pair) AsCookie(
 	r *http.Request,
 	w http.ResponseWriter,
-	s bool) *http.Cookie {
+	s bool) (*http.Cookie, error) {
+	var b bytes.Buffer
+	err := gob.NewEncoder(&b).Encode(p.Value)
+	if err != nil {
+		return nil, err
+	}
 	return &http.Cookie{
 		Name:     p.CookieName(),
-		Domain:   getDomain(r.Host),    // Specifically to this domain
-		Value:    p.Value,              // The value as a base 64 string
-		SameSite: http.SameSiteLaxMode, // Available to all paths
+		Domain:   getDomain(r.Host),                            // Specifically to this domain
+		Value:    base64.StdEncoding.EncodeToString(b.Bytes()), // The value as a base 64 string
+		SameSite: http.SameSiteLaxMode,                         // Available to all paths
 		HttpOnly: false,
 		Secure:   s, // Secure if HTTPs, otherwise false.
 		// Set the cookie expiry time to the same as the SWAN pair.
-		Expires: p.Expires,
-	}
-}
-
-// AsOWID returns the Value as an OWID structure. Used for SWID, SID and
-// Preferences. If the Value is not an OWID then an error is returned.
-func (p *Pair) AsOWID() (*owid.OWID, error) {
-	return owid.FromBase64(p.Value)
+		Expires: p.Expires}, nil
 }
 
 func getDomain(h string) string {

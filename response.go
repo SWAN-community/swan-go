@@ -16,8 +16,16 @@
 
 package swan
 
-// Empty contains nothing. Used for most OWIDs that just sign the root and
-// themselves.
-type Empty struct {
-	Response
+// First byte of the data structure will be the type of response.
+const (
+	responseBid    byte = iota
+	responseID     byte = iota
+	responseFailed byte = iota
+	responseEmpty  byte = iota
+)
+
+// Response from an OpenRTB transation.
+type Response struct {
+	Base
+	StructType byte `json:"type"` // The type of structure the response relates to
 }
