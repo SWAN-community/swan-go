@@ -72,7 +72,7 @@ func (s *Seed) IsStopped(u string) bool {
 
 func (s *Seed) MarshalOwid() ([]byte, error) {
 	var b bytes.Buffer
-	err := common.WriteMarshaller(&b, *s.SWID.Value())
+	err := common.WriteMarshaller(&b, s.SWID.Value)
 	if err != nil {
 		return nil, err
 	}

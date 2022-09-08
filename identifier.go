@@ -30,20 +30,33 @@ import (
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/identifier.md
 type Identifier struct {
 	Base
-	idType    string    // Type of identifier
-	value     uuid.UUID // In practice the value is a UUID so store it as one
+	IdType    string    `json:"type"`  // Type of identifier
+	Value     uuid.UUID `json:"value"` // In practice the value is a UUID so store it as one
 	Persisted bool      // True if the value has been stored.
 }
 
-func NewIdentifier(s *owid.Signer, idType string, value uuid.UUID) (*Identifier, error) {
+func NewIdentifier(
+	s *owid.Signer,
+	idType string,
+	value uuid.UUID) (*Identifier, error) {
 	var err error
-	i := &Identifier{idType: idType, value: value}
+	i := &Identifier{IdType: idType, Value: value}
 	i.Base.Version = swanVersion
 	i.Base.OWID, err = s.CreateOWIDandSign(i)
 	if err != nil {
 		return nil, err
 	}
 	return i, nil
+}
+
+func IdentifierFromJson(j []byte) (*Identifier, error) {
+	var i Identifier
+	err := json.Unmarshal(j, &i)
+	if err != nil {
+		return nil, err
+	}
+	i.OWID.Target = &i
+	return &i, nil
 }
 
 func IdentifierFromBase64(value string) (*Identifier, error) {
@@ -67,62 +80,16 @@ func (i *Identifier) ToBase64() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (i *Identifier) Type() string { return i.idType }
-
-func (i *Identifier) Value() *uuid.UUID { return &i.value }
-
-func (i *Identifier) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
-	m["version"] = i.Base.Version
-	m["type"] = i.idType
-	m["value"] = i.value.String()
-	m["source"] = i.Base.OWID
-	return json.Marshal(m)
-}
-
-func (i *Identifier) UnmarshalJSON(data []byte) error {
-	var m map[string]interface{}
-	err := json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-	if v, ok := m["version"].(float64); ok {
-		i.Base.Version = byte(v)
-	} else {
-		return errorMissing("version")
-	}
-	if t, ok := m["type"].(string); ok {
-		i.idType = t
-	} else {
-		return errorMissing("type")
-	}
-	if u, ok := m["value"].(string); ok {
-		i.value, err = uuid.Parse(u)
-		if err != nil {
-			return err
-		}
-	} else {
-		return errorMissing("signature")
-	}
-	if o, ok := m["source"].(owid.OWID); ok {
-		i.Base.OWID = &o
-		o.Target = i
-	} else {
-		return errorMissing("source")
-	}
-	return nil
-}
-
 func (i *Identifier) marshal(b *bytes.Buffer) error {
 	err := common.WriteByte(b, i.Base.Version)
 	if err != nil {
 		return err
 	}
-	err = common.WriteString(b, i.idType)
+	err = common.WriteString(b, i.IdType)
 	if err != nil {
 		return err
 	}
-	err = common.WriteMarshaller(b, i.value)
+	err = common.WriteMarshaller(b, i.Value)
 	if err != nil {
 		return err
 	}
@@ -158,7 +125,7 @@ func (i *Identifier) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return err
 	}
-	i.idType, err = common.ReadString(b)
+	i.IdType, err = common.ReadString(b)
 	if err != nil {
 		return err
 	}
@@ -166,7 +133,7 @@ func (i *Identifier) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return err
 	}
-	err = i.value.UnmarshalBinary(u)
+	err = i.Value.UnmarshalBinary(u)
 	if err != nil {
 		return err
 	}

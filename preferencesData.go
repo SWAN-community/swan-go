@@ -35,29 +35,6 @@ func (p *PreferencesData) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func (p *PreferencesData) unmarshalMap(m map[string]interface{}) error {
-	if v, ok := m["use_browsing_for_personalization"].(bool); ok {
-		p.UseBrowsingForPersonalization = v
-	} else {
-		return errorMissing("use_browsing_for_personalization")
-	}
-	return nil
-}
-
-func (p *PreferencesData) UnmarshalJSON(data []byte) error {
-	var m map[string]interface{}
-	err := json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-	if v, ok := m["use_browsing_for_personalization"].(bool); ok {
-		p.UseBrowsingForPersonalization = v
-	} else {
-		return errorMissing("use_browsing_for_personalization")
-	}
-	return nil
-}
-
 func (p *PreferencesData) MarshalBinary() ([]byte, error) {
 	var b bytes.Buffer
 	err := common.WriteBool(&b, p.UseBrowsingForPersonalization)

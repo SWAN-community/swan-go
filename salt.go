@@ -28,17 +28,27 @@ import (
 // Salt used to represent an Salt address.
 type Salt struct {
 	Base
-	salt []byte
+	Salt []byte `json:"salt"`
 }
 
 func NewSalt(s *owid.Signer, salt []byte) (*Salt, error) {
 	var err error
-	a := &Salt{salt: salt}
+	a := &Salt{Salt: salt}
 	a.Base.OWID, err = s.CreateOWIDandSign(a)
 	if err != nil {
 		return nil, err
 	}
 	return a, nil
+}
+
+func SaltFromJson(j []byte) (*Salt, error) {
+	var s Salt
+	err := json.Unmarshal(j, &s)
+	if err != nil {
+		return nil, err
+	}
+	s.OWID.Target = &s
+	return &s, nil
 }
 
 func SaltFromBase64(value string) (*Salt, error) {
@@ -62,47 +72,12 @@ func (s *Salt) ToBase64() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (s *Salt) Salt() []byte { return s.salt }
-
-func (s *Salt) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
-	m["version"] = s.Base.Version
-	m["salt"] = s.salt
-	m["source"] = s.Base.OWID
-	return json.Marshal(m)
-}
-
-func (s *Salt) UnmarshalJSON(data []byte) error {
-	var m map[string]interface{}
-	err := json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-	if v, ok := m["version"].(float64); ok {
-		s.Base.Version = byte(v)
-	} else {
-		return errorMissing("version")
-	}
-	if v, ok := m["salt"].([]byte); ok {
-		s.salt = v
-	} else {
-		return errorMissing("salt")
-	}
-	if o, ok := m["source"].(owid.OWID); ok {
-		s.Base.OWID = &o
-		o.Target = s
-	} else {
-		return errorMissing("source")
-	}
-	return nil
-}
-
 func (s *Salt) marshal(b *bytes.Buffer) error {
 	err := common.WriteByte(b, s.Base.Version)
 	if err != nil {
 		return err
 	}
-	err = common.WriteByteArray(b, s.salt)
+	err = common.WriteByteArray(b, s.Salt)
 	if err != nil {
 		return err
 	}
@@ -138,7 +113,7 @@ func (s *Salt) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return err
 	}
-	s.salt, err = common.ReadByteArray(b)
+	s.Salt, err = common.ReadByteArray(b)
 	if err != nil {
 		return err
 	}

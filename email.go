@@ -28,18 +28,28 @@ import (
 // Email used to represent an email address.
 type Email struct {
 	Base
-	email string
+	Email string `json:"email"`
 }
 
 func NewEmail(s *owid.Signer, email string) (*Email, error) {
 	var err error
-	e := &Email{email: email}
+	e := &Email{Email: email}
 	e.Base.Version = swanVersion
 	e.Base.OWID, err = s.CreateOWIDandSign(e)
 	if err != nil {
 		return nil, err
 	}
 	return e, nil
+}
+
+func EmailFromJson(j []byte) (*Email, error) {
+	var e Email
+	err := json.Unmarshal(j, &e)
+	if err != nil {
+		return nil, err
+	}
+	e.OWID.Target = &e
+	return &e, nil
 }
 
 func EmailFromBase64(value string) (*Email, error) {
@@ -63,47 +73,12 @@ func (e *Email) ToBase64() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (e *Email) Email() string { return e.email }
-
-func (e *Email) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
-	m["version"] = e.Base.Version
-	m["email"] = e.email
-	m["source"] = e.Base.OWID
-	return json.Marshal(m)
-}
-
-func (e *Email) UnmarshalJSON(data []byte) error {
-	var m map[string]interface{}
-	err := json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-	if v, ok := m["version"].(float64); ok {
-		e.Base.Version = byte(v)
-	} else {
-		return errorMissing("version")
-	}
-	if v, ok := m["email"].(string); ok {
-		e.email = v
-	} else {
-		return errorMissing("email")
-	}
-	if o, ok := m["source"].(owid.OWID); ok {
-		e.Base.OWID = &o
-		o.Target = e
-	} else {
-		return errorMissing("source")
-	}
-	return nil
-}
-
 func (e *Email) marshal(b *bytes.Buffer) error {
 	err := common.WriteByte(b, e.Base.Version)
 	if err != nil {
 		return err
 	}
-	err = common.WriteString(b, e.email)
+	err = common.WriteString(b, e.Email)
 	if err != nil {
 		return err
 	}
@@ -139,7 +114,7 @@ func (e *Email) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return err
 	}
-	e.email, err = common.ReadString(b)
+	e.Email, err = common.ReadString(b)
 	if err != nil {
 		return err
 	}
