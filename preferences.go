@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
@@ -54,12 +53,8 @@ func PreferencesFromJson(j []byte) (*Preferences, error) {
 }
 
 func PreferencesFromBase64(value string) (*Preferences, error) {
-	b, err := base64.StdEncoding.DecodeString(value)
-	if err != nil {
-		return nil, err
-	}
 	var p Preferences
-	err = p.UnmarshalBinary(b)
+	err := unmarshalString(&p, value)
 	if err != nil {
 		return nil, err
 	}
@@ -67,61 +62,31 @@ func PreferencesFromBase64(value string) (*Preferences, error) {
 }
 
 func (p *Preferences) ToBase64() (string, error) {
-	b, err := p.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func (p *Preferences) marshal(b *bytes.Buffer) error {
-	err := common.WriteByte(b, p.Base.Version)
-	if err != nil {
-		return err
-	}
-	err = common.WriteMarshaller(b, &p.Data)
-	if err != nil {
-		return err
-	}
-	return nil
+	return p.toBase64(func(b *bytes.Buffer) error { return p.marshal(b) })
 }
 
 func (p *Preferences) MarshalOwid() ([]byte, error) {
-	var b bytes.Buffer
-	err := p.marshal(&b)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
+	return p.marshalOwid(func(b *bytes.Buffer) error { return p.marshal(b) })
 }
 
 func (p *Preferences) MarshalBinary() ([]byte, error) {
-	var b bytes.Buffer
-	err := p.marshal(&b)
-	if err != nil {
-		return nil, err
-	}
-	err = p.Base.OWID.ToBuffer(&b)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
+	return p.marshalBinary(func(b *bytes.Buffer) error { return p.marshal(b) })
 }
 
-func (p *Preferences) UnmarshalBinary(data []byte) error {
-	var err error
-	b := bytes.NewBuffer(data)
-	p.Base.Version, err = common.ReadByte(b)
-	if err != nil {
-		return err
-	}
-	err = common.ReadMarshaller(b, &p.Data)
-	if err != nil {
-		return err
-	}
-	p.Base.OWID, err = owid.FromBuffer(b, p)
+func (p *Preferences) marshal(b *bytes.Buffer) error {
+	err := common.WriteMarshaller(b, &p.Data)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (p *Preferences) UnmarshalBinary(data []byte) error {
+	return p.unmarshalBinary(p, data, func(b *bytes.Buffer) error {
+		err := common.ReadMarshaller(b, &p.Data)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

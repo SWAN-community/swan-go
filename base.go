@@ -17,8 +17,11 @@
 package swan
 
 import (
-	"fmt"
+	"bytes"
+	"encoding"
+	"encoding/base64"
 
+	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
 )
 
@@ -28,12 +31,95 @@ type Base struct {
 	OWID    *owid.OWID `json:"source"`  // OWID related to the structure
 }
 
-// errorMissing function to create error messages for missing JSON keys.
-func errorMissing(name string) error {
-	return fmt.Errorf("'%s' missing", name)
+type base interface {
+	marshal(*bytes.Buffer) error
 }
 
-// errorInvalid function to create error messages for invalid JSON keys.
-func errorInvalid(name string, typeName string) error {
-	return fmt.Errorf("'%s' invalid for type '%s'", name, typeName)
+// writeData writes the version before calling the function.
+func (b *Base) writeData(u *bytes.Buffer, f func(*bytes.Buffer) error) error {
+	err := common.WriteByte(u, b.Version)
+	if err != nil {
+		return err
+	}
+	err = f(u)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// marshalOwid returns a byte array of all the data needed by an OWID.
+func (b *Base) marshalOwid(f func(*bytes.Buffer) error) ([]byte, error) {
+	var u bytes.Buffer
+	err := b.writeData(&u, f)
+	if err != nil {
+		return nil, err
+	}
+	return u.Bytes(), nil
+}
+
+// marshalBinary marshals the version, calls the function to add more data, and
+// finishes by adding the OWID before returning the byte array.
+func (b *Base) marshalBinary(f func(*bytes.Buffer) error) ([]byte, error) {
+	var u bytes.Buffer
+	err := b.writeData(&u, f)
+	if err != nil {
+		return nil, err
+	}
+	err = b.OWID.ToBuffer(&u)
+	if err != nil {
+		return nil, err
+	}
+	return u.Bytes(), nil
+}
+
+// toBase64 encodes the marshalBinary result as a base64 string.
+func (b *Base) toBase64(f func(*bytes.Buffer) error) (string, error) {
+	d, err := b.marshalBinary(f)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(d), nil
+}
+
+// unmarshalBinary handles converting a byte array into all the fields of a
+// structure that inherits from Base.
+// m the marshaler for the OWID
+// d the byte array with the data
+// f function to add the content from the caller
+func (b *Base) unmarshalBinary(
+	m owid.Marshaler,
+	d []byte,
+	f func(*bytes.Buffer) error) error {
+	var err error
+	u := bytes.NewBuffer(d)
+
+	// Read the version first.
+	b.Version, err = common.ReadByte(u)
+	if err != nil {
+		return err
+	}
+
+	// Call the provided function to read the fields for the calling type.
+	err = f(u)
+	if err != nil {
+		return err
+	}
+
+	// Finally read the OWID data passing
+	b.OWID, err = owid.FromBuffer(u, m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// unmarshalString uses the unmarshaler to read the byte array contained in the
+// base64 encoded string.
+func unmarshalString(b encoding.BinaryUnmarshaler, s string) error {
+	d, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+	return b.UnmarshalBinary(d)
 }

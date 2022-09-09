@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -42,4 +43,14 @@ func (e *Error) Error() string {
 		return e.Err.Error()
 	}
 	return "empty error"
+}
+
+// errorMissing function to create error messages for missing JSON keys.
+func errorMissing(name string) error {
+	return fmt.Errorf("'%s' missing", name)
+}
+
+// errorInvalid function to create error messages for invalid JSON keys.
+func errorInvalid(name string, typeName string) error {
+	return fmt.Errorf("'%s' invalid for type '%s'", name, typeName)
 }

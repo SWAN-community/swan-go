@@ -21,49 +21,64 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/google/uuid"
 )
 
-func TestPreferences(t *testing.T) {
+func TestSeed(t *testing.T) {
 	s := owid.NewTestDefaultSigner(t)
 
+	// Create the new seed.
+	d, err := NewSeed()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add the simple fields.
+	d.PubDomain = "test.com"
+	d.Stopped = []string{"a.com", "b.com"}
+
 	// Create the new preferences.
-	p, err := NewPreferences(s, true)
+	d.Preferences, err = NewPreferences(s, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the new identifier.
+	u, err := uuid.NewUUID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.SWID, err = NewIdentifier(s, "type", u)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the new byte array.
+	d.SID, err = NewByteArray(s, []byte{1, 2, 3, 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = d.Sign(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("pass", func(t *testing.T) {
 
-		// Verify the preferences and check that they pass.
-		verifyBase(t, s, &p.Base, true)
-	})
-	t.Run("base64", func(t *testing.T) {
-
-		// Get a base64 string representation of the preferences.
-		b, err := p.ToBase64()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new instance of the preferences from the base64 string.
-		n, err := PreferencesFromBase64(b)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		// Verify the seed and check that they pass.
+		verifyBase(t, s, &d.Base, true)
 	})
 	t.Run("json", func(t *testing.T) {
 
-		// Get a JSON representation of the preferences.
-		j, err := json.Marshal(p)
+		// Get a JSON representation of the seed.
+		j, err := json.Marshal(d)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new instance of the preferences from the JSON.
-		n, err := PreferencesFromJson(j)
+		// Create a new instance of the seed from the JSON.
+		n, err := SeedFromJson(j)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -73,14 +88,14 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("binary", func(t *testing.T) {
 
-		// Get a binary representation of the preferences.
-		b, err := p.MarshalBinary()
+		// Get a binary representation of the seed.
+		b, err := d.MarshalBinary()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new instance of the preferences from the binary.
-		var n Preferences
+		// Create a new instance of the seed from the binary.
+		var n Seed
 		err = n.UnmarshalBinary(b)
 		if err != nil {
 			t.Fatal(err)
@@ -91,9 +106,9 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("fail", func(t *testing.T) {
 
-		// Change the preferences and then verify them to confirm that they
+		// Change the seed and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
-		p.Data.UseBrowsingForPersonalization = false
-		verifyBase(t, s, &p.Base, false)
+		d.PubDomain = "different.com"
+		verifyBase(t, s, &d.Base, false)
 	})
 }

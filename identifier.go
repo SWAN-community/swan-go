@@ -60,12 +60,8 @@ func IdentifierFromJson(j []byte) (*Identifier, error) {
 }
 
 func IdentifierFromBase64(value string) (*Identifier, error) {
-	b, err := base64.StdEncoding.DecodeString(value)
-	if err != nil {
-		return nil, err
-	}
 	var i Identifier
-	err = i.UnmarshalBinary(b)
+	err := unmarshalString(&i, value)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +76,16 @@ func (i *Identifier) ToBase64() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
+func (i *Identifier) MarshalOwid() ([]byte, error) {
+	return i.marshalOwid(func(b *bytes.Buffer) error { return i.marshal(b) })
+}
+
+func (i *Identifier) MarshalBinary() ([]byte, error) {
+	return i.marshalBinary(func(b *bytes.Buffer) error { return i.marshal(b) })
+}
+
 func (i *Identifier) marshal(b *bytes.Buffer) error {
-	err := common.WriteByte(b, i.Base.Version)
-	if err != nil {
-		return err
-	}
-	err = common.WriteString(b, i.IdType)
+	err := common.WriteString(b, i.IdType)
 	if err != nil {
 		return err
 	}
@@ -96,50 +96,17 @@ func (i *Identifier) marshal(b *bytes.Buffer) error {
 	return nil
 }
 
-func (i *Identifier) MarshalOwid() ([]byte, error) {
-	var b bytes.Buffer
-	err := i.marshal(&b)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
-}
-
-func (i *Identifier) MarshalBinary() ([]byte, error) {
-	var b bytes.Buffer
-	err := i.marshal(&b)
-	if err != nil {
-		return nil, err
-	}
-	err = i.Base.OWID.ToBuffer(&b)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
-}
-
 func (i *Identifier) UnmarshalBinary(data []byte) error {
-	var err error
-	b := bytes.NewBuffer(data)
-	i.Base.Version, err = common.ReadByte(b)
-	if err != nil {
-		return err
-	}
-	i.IdType, err = common.ReadString(b)
-	if err != nil {
-		return err
-	}
-	u, err := common.ReadByteArray(b)
-	if err != nil {
-		return err
-	}
-	err = i.Value.UnmarshalBinary(u)
-	if err != nil {
-		return err
-	}
-	i.Base.OWID, err = owid.FromBuffer(b, i)
-	if err != nil {
-		return err
-	}
-	return nil
+	return i.unmarshalBinary(i, data, func(b *bytes.Buffer) error {
+		var err error
+		i.IdType, err = common.ReadString(b)
+		if err != nil {
+			return err
+		}
+		err = common.ReadMarshaller(b, &i.Value)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

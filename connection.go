@@ -96,7 +96,7 @@ type Update struct {
 	swid  *Identifier
 	pref  *Preferences
 	email *Email
-	salt  *Salt
+	salt  *ByteArray
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or

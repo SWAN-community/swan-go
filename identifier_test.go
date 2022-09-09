@@ -21,32 +21,37 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/google/uuid"
 )
 
-func TestPreferences(t *testing.T) {
+func TestIdentifier(t *testing.T) {
 	s := owid.NewTestDefaultSigner(t)
 
-	// Create the new preferences.
-	p, err := NewPreferences(s, true)
+	// Create the new identifier.
+	u, err := uuid.NewUUID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	i, err := NewIdentifier(s, "type", u)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("pass", func(t *testing.T) {
 
-		// Verify the preferences and check that they pass.
-		verifyBase(t, s, &p.Base, true)
+		// Verify the identifier and check that they pass.
+		verifyBase(t, s, &i.Base, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
-		// Get a base64 string representation of the preferences.
-		b, err := p.ToBase64()
+		// Get a base64 string representation of the identifier.
+		b, err := i.ToBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new instance of the preferences from the base64 string.
-		n, err := PreferencesFromBase64(b)
+		// Create a new instance of the identifier from the base64 string.
+		n, err := IdentifierFromBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -56,14 +61,14 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("json", func(t *testing.T) {
 
-		// Get a JSON representation of the preferences.
-		j, err := json.Marshal(p)
+		// Get a JSON representation of the identifier.
+		j, err := json.Marshal(i)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new instance of the preferences from the JSON.
-		n, err := PreferencesFromJson(j)
+		// Create a new instance of the identifier from the JSON.
+		n, err := IdentifierFromJson(j)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -73,14 +78,14 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("binary", func(t *testing.T) {
 
-		// Get a binary representation of the preferences.
-		b, err := p.MarshalBinary()
+		// Get a binary representation of the identifier.
+		b, err := i.MarshalBinary()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new instance of the preferences from the binary.
-		var n Preferences
+		// Create a new instance of the identifier from the binary.
+		var n Identifier
 		err = n.UnmarshalBinary(b)
 		if err != nil {
 			t.Fatal(err)
@@ -91,9 +96,9 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("fail", func(t *testing.T) {
 
-		// Change the preferences and then verify them to confirm that they
+		// Change the identifier and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
-		p.Data.UseBrowsingForPersonalization = false
-		verifyBase(t, s, &p.Base, false)
+		i.IdType += " "
+		verifyBase(t, s, &i.Base, false)
 	})
 }

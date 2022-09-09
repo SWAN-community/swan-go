@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 
 	"github.com/SWAN-community/common-go"
@@ -31,9 +32,9 @@ import (
 type Seed struct {
 	Base
 	PubDomain   string       `json:"pubDomain"`   // The domain that the advertisements will appear on
-	UUID        []byte       `json:"uuid"`        // A unique identifier for this ID
+	UUID        uuid.UUID    `json:"uuid"`        // A unique identifier for this ID
 	SWID        *Identifier  `json:"swid"`        // The Secure Web ID
-	SID         *Identifier  `json:"sid"`         // The Signed In ID
+	SID         *ByteArray   `json:"sid"`         // The Signed In ID
 	Preferences *Preferences `json:"preferences"` // The privacy preferences
 	Stopped     []string     `json:"stopped"`     // List of domains or advert IDs that should not be shown
 }
@@ -41,16 +42,23 @@ type Seed struct {
 // Returns a new swan.Seed with the correct version and a random uuid ready to
 // have the other values added and then signed.
 func NewSeed() (*Seed, error) {
-	uuid, err := uuid.New().MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
 	return &Seed{
-		Base: Base{Version: 1},
-		UUID: uuid,
+		Base: Base{Version: swanVersion},
+		UUID: uuid.New(),
 	}, nil
 }
 
+func SeedFromJson(j []byte) (*Seed, error) {
+	var s Seed
+	err := json.Unmarshal(j, &s)
+	if err != nil {
+		return nil, err
+	}
+	s.OWID.Target = &s
+	return &s, nil
+}
+
+// Sign the seed including all the fields included.
 func (s *Seed) Sign(signer *owid.Signer) error {
 	var err error
 	s.Base.OWID, err = signer.CreateOWIDandSign(s)
@@ -71,14 +79,68 @@ func (s *Seed) IsStopped(u string) bool {
 }
 
 func (s *Seed) MarshalOwid() ([]byte, error) {
-	var b bytes.Buffer
-	err := common.WriteMarshaller(&b, s.SWID.Value)
+	return s.marshalOwid(func(b *bytes.Buffer) error { return s.marshal(b) })
+}
+
+func (s *Seed) MarshalBinary() ([]byte, error) {
+	return s.marshalBinary(func(b *bytes.Buffer) error { return s.marshal(b) })
+}
+
+func (s *Seed) marshal(b *bytes.Buffer) error {
+	err := common.WriteString(b, s.PubDomain)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = common.WriteMarshaller(&b, *&s.Preferences)
+	err = common.WriteMarshaller(b, s.UUID)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return b.Bytes(), nil
+	err = common.WriteMarshaller(b, s.SWID)
+	if err != nil {
+		return err
+	}
+	err = common.WriteMarshaller(b, s.Preferences)
+	if err != nil {
+		return err
+	}
+	err = common.WriteMarshaller(b, s.SID)
+	if err != nil {
+		return err
+	}
+	err = common.WriteStrings(b, s.Stopped)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Seed) UnmarshalBinary(data []byte) error {
+	return s.unmarshalBinary(s, data, func(b *bytes.Buffer) error {
+		var err error
+		s.PubDomain, err = common.ReadString(b)
+		if err != nil {
+			return err
+		}
+		err = common.ReadMarshaller(b, &s.UUID)
+		if err != nil {
+			return err
+		}
+		err = common.ReadMarshaller(b, s.SWID)
+		if err != nil {
+			return err
+		}
+		err = common.ReadMarshaller(b, s.Preferences)
+		if err != nil {
+			return err
+		}
+		err = common.ReadMarshaller(b, s.SID)
+		if err != nil {
+			return err
+		}
+		s.Stopped, err = common.ReadStrings(b)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

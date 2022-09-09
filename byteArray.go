@@ -25,16 +25,15 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
-// Bid contains the information about the advert to be displayed.
-type Bid struct {
-	Response
-	MediaURL      string `json:"mediaUrl"`      // The URL of the content of the advert provided in response
-	AdvertiserURL string `json:"advertiserURL"` // The URL to direct the browser to if the advert is selected
+// ByteArray used for general purpose data storage.
+type ByteArray struct {
+	Base
+	Data []byte `json:"data"`
 }
 
-func NewBid(s *owid.Signer, mediaUrl string, advertiserUrl string) (*Bid, error) {
+func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {
 	var err error
-	a := &Bid{MediaURL: mediaUrl, AdvertiserURL: advertiserUrl}
+	a := &ByteArray{Data: data}
 	a.Base.Version = swanVersion
 	a.Base.OWID, err = s.CreateOWIDandSign(a)
 	if err != nil {
@@ -43,8 +42,8 @@ func NewBid(s *owid.Signer, mediaUrl string, advertiserUrl string) (*Bid, error)
 	return a, nil
 }
 
-func BidFromJson(j []byte) (*Bid, error) {
-	var a Bid
+func ByteArrayFromJson(j []byte) (*ByteArray, error) {
+	var a ByteArray
 	err := json.Unmarshal(j, &a)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,7 @@ func BidFromJson(j []byte) (*Bid, error) {
 	return &a, nil
 }
 
-func (a *Bid) ToBase64() (string, error) {
+func (a *ByteArray) ToBase64() (string, error) {
 	b, err := a.MarshalBinary()
 	if err != nil {
 		return "", err
@@ -61,8 +60,8 @@ func (a *Bid) ToBase64() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func BidFromBase64(value string) (*Bid, error) {
-	var a Bid
+func ByteArrayFromBase64(value string) (*ByteArray, error) {
+	var a ByteArray
 	err := unmarshalString(&a, value)
 	if err != nil {
 		return nil, err
@@ -70,34 +69,26 @@ func BidFromBase64(value string) (*Bid, error) {
 	return &a, nil
 }
 
-func (a *Bid) MarshalOwid() ([]byte, error) {
+func (a *ByteArray) MarshalOwid() ([]byte, error) {
 	return a.marshalOwid(func(b *bytes.Buffer) error { return a.marshal(b) })
 }
 
-func (a *Bid) MarshalBinary() ([]byte, error) {
+func (a *ByteArray) MarshalBinary() ([]byte, error) {
 	return a.marshalBinary(func(b *bytes.Buffer) error { return a.marshal(b) })
 }
 
-func (a *Bid) marshal(b *bytes.Buffer) error {
-	err := common.WriteString(b, a.MediaURL)
-	if err != nil {
-		return err
-	}
-	err = common.WriteString(b, a.AdvertiserURL)
+func (a *ByteArray) marshal(b *bytes.Buffer) error {
+	err := common.WriteByteArray(b, a.Data)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a *Bid) UnmarshalBinary(data []byte) error {
+func (a *ByteArray) UnmarshalBinary(data []byte) error {
 	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
 		var err error
-		a.MediaURL, err = common.ReadString(b)
-		if err != nil {
-			return err
-		}
-		a.AdvertiserURL, err = common.ReadString(b)
+		a.Data, err = common.ReadByteArray(b)
 		if err != nil {
 			return err
 		}
