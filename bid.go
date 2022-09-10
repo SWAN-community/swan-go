@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -35,8 +36,9 @@ type Bid struct {
 func NewBid(s *owid.Signer, mediaUrl string, advertiserUrl string) (*Bid, error) {
 	var err error
 	a := &Bid{MediaURL: mediaUrl, AdvertiserURL: advertiserUrl}
-	a.Base.Version = swanVersion
-	a.Base.OWID, err = s.CreateOWIDandSign(a)
+	a.Version = swanVersion
+	a.StructType = responseBid
+	a.OWID, err = s.CreateOWIDandSign(a)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +95,9 @@ func (a *Bid) marshal(b *bytes.Buffer) error {
 func (a *Bid) UnmarshalBinary(data []byte) error {
 	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
 		var err error
+		if a.StructType != responseBid {
+			return fmt.Errorf("struct type not bid '%d'", responseBid)
+		}
 		a.MediaURL, err = common.ReadString(b)
 		if err != nil {
 			return err

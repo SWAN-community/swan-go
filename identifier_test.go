@@ -66,6 +66,7 @@ func TestIdentifier(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Log(string(j))
 
 		// Create a new instance of the identifier from the JSON.
 		n, err := IdentifierFromJson(j)

@@ -61,6 +61,7 @@ func TestByteArray(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Log(string(j))
 
 		// Create a new instance of the byte array from the JSON.
 		n, err := ByteArrayFromJson(j)

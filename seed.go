@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -58,10 +59,27 @@ func SeedFromJson(j []byte) (*Seed, error) {
 	return &s, nil
 }
 
+func SeedFromBase64(value string) (*Seed, error) {
+	var s Seed
+	err := unmarshalString(&s, value)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (s *Seed) ToBase64() (string, error) {
+	b, err := s.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
 // Sign the seed including all the fields included.
 func (s *Seed) Sign(signer *owid.Signer) error {
 	var err error
-	s.Base.OWID, err = signer.CreateOWIDandSign(s)
+	s.OWID, err = signer.CreateOWIDandSign(s)
 	if err != nil {
 		return err
 	}
@@ -125,13 +143,22 @@ func (s *Seed) UnmarshalBinary(data []byte) error {
 		if err != nil {
 			return err
 		}
+		if s.SWID == nil {
+			s.SWID = &Identifier{}
+		}
 		err = common.ReadMarshaller(b, s.SWID)
 		if err != nil {
 			return err
 		}
+		if s.Preferences == nil {
+			s.Preferences = &Preferences{}
+		}
 		err = common.ReadMarshaller(b, s.Preferences)
 		if err != nil {
 			return err
+		}
+		if s.SID == nil {
+			s.SID = &ByteArray{}
 		}
 		err = common.ReadMarshaller(b, s.SID)
 		if err != nil {

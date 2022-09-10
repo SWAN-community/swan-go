@@ -34,8 +34,8 @@ type Preferences struct {
 func NewPreferences(s *owid.Signer, data bool) (*Preferences, error) {
 	var err error
 	p := &Preferences{Data: PreferencesData{data}}
-	p.Base.Version = swanVersion
-	p.Base.OWID, err = s.CreateOWIDandSign(p)
+	p.Version = swanVersion
+	p.OWID, err = s.CreateOWIDandSign(p)
 	if err != nil {
 		return nil, err
 	}

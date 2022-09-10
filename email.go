@@ -34,8 +34,8 @@ type Email struct {
 func NewEmail(s *owid.Signer, email string) (*Email, error) {
 	var err error
 	e := &Email{Email: email}
-	e.Base.Version = swanVersion
-	e.Base.OWID, err = s.CreateOWIDandSign(e)
+	e.Version = swanVersion
+	e.OWID, err = s.CreateOWIDandSign(e)
 	if err != nil {
 		return nil, err
 	}

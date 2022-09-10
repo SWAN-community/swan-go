@@ -61,6 +61,7 @@ func TestPreferences(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Log(string(j))
 
 		// Create a new instance of the preferences from the JSON.
 		n, err := PreferencesFromJson(j)

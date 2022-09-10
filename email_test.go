@@ -61,6 +61,7 @@ func TestEmail(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Log(string(j))
 
 		// Create a new instance of the email from the JSON.
 		n, err := EmailFromJson(j)

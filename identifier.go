@@ -41,8 +41,8 @@ func NewIdentifier(
 	value uuid.UUID) (*Identifier, error) {
 	var err error
 	i := &Identifier{IdType: idType, Value: value}
-	i.Base.Version = swanVersion
-	i.Base.OWID, err = s.CreateOWIDandSign(i)
+	i.Version = swanVersion
+	i.OWID, err = s.CreateOWIDandSign(i)
 	if err != nil {
 		return nil, err
 	}

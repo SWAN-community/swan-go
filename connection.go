@@ -19,7 +19,7 @@ package swan
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -369,7 +369,7 @@ func requestAsByteArray(
 	}
 
 	// Read the response.
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, &Error{Err: err, Response: res}
 	}

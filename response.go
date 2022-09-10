@@ -40,7 +40,7 @@ type Response struct {
 // writeData writes the base and type before calling the function.
 func (r *Response) writeData(u *bytes.Buffer, f func(*bytes.Buffer) error) error {
 	return r.Base.writeData(u, func(b *bytes.Buffer) error {
-		err := common.WriteByte(u, b.StructType)
+		err := common.WriteByte(b, r.StructType)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (r *Response) unmarshalBinary(
 	f func(*bytes.Buffer) error) error {
 	return r.Base.unmarshalBinary(m, d, func(b *bytes.Buffer) error {
 		var err error
-		r.StructType, err = common.ReadByte(u)
+		r.StructType, err = common.ReadByte(b)
 		if err != nil {
 			return err
 		}

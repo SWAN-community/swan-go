@@ -16,8 +16,77 @@
 
 package swan
 
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+
+	"github.com/SWAN-community/owid-go"
+)
+
 // Empty contains nothing. Used for most OWIDs that just sign the root and
 // themselves.
 type Empty struct {
 	Response
+}
+
+func NewEmpty(s *owid.Signer) (*Empty, error) {
+	var err error
+	a := &Empty{}
+	a.Version = swanVersion
+	a.StructType = responseEmpty
+	a.OWID, err = s.CreateOWIDandSign(a)
+	if err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+func EmptyFromJson(j []byte) (*Empty, error) {
+	var a Empty
+	err := json.Unmarshal(j, &a)
+	if err != nil {
+		return nil, err
+	}
+	a.OWID.Target = &a
+	return &a, nil
+}
+
+func (a *Empty) ToBase64() (string, error) {
+	b, err := a.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+func EmptyFromBase64(value string) (*Empty, error) {
+	var a Empty
+	err := unmarshalString(&a, value)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (a *Empty) MarshalOwid() ([]byte, error) {
+	return a.marshalOwid(func(b *bytes.Buffer) error { return a.marshal(b) })
+}
+
+func (a *Empty) MarshalBinary() ([]byte, error) {
+	return a.marshalBinary(func(b *bytes.Buffer) error { return a.marshal(b) })
+}
+
+func (a *Empty) marshal(b *bytes.Buffer) error {
+	return nil
+}
+
+func (a *Empty) UnmarshalBinary(data []byte) error {
+	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
+		if a.StructType != responseEmpty {
+			return fmt.Errorf("struct type not failed '%d'", responseEmpty)
+		}
+		return nil
+	})
 }

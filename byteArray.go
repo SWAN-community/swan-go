@@ -34,8 +34,8 @@ type ByteArray struct {
 func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {
 	var err error
 	a := &ByteArray{Data: data}
-	a.Base.Version = swanVersion
-	a.Base.OWID, err = s.CreateOWIDandSign(a)
+	a.Version = swanVersion
+	a.OWID, err = s.CreateOWIDandSign(a)
 	if err != nil {
 		return nil, err
 	}

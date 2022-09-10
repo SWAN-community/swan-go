@@ -31,10 +31,6 @@ type Base struct {
 	OWID    *owid.OWID `json:"source"`  // OWID related to the structure
 }
 
-type base interface {
-	marshal(*bytes.Buffer) error
-}
-
 // writeData writes the version before calling the function.
 func (b *Base) writeData(u *bytes.Buffer, f func(*bytes.Buffer) error) error {
 	err := common.WriteByte(u, b.Version)
