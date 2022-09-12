@@ -92,14 +92,15 @@ publisher to the User Interface Provider in the state array of the original
 Fetch operation. See the SWAN demo for passing data between different parties
 via the Operation.State array parameter.
 
-The members Pref, Email, Salt and SWID should be set to the values provided by 
+The members Pref, Email, Salt and RID should be set to the values provided by 
 the user before the GetURL function is called. If they are left blank the 
 existing values are removed from SWAN.
 
 ```go
 
-// Get the OWID creator which is needed to sign the raw SWAN data.
-creator, err := YourGetOWIDCreator()
+// Get the OWID signer which is needed to sign the raw SWAN data. The User
+// Interface Provider will be responsible for obtaining their OWID signer.
+signer, err := YourMethodToGetOWIDSigner()
 if err != nil { return err }
 
 // Create a new Update operation with the request from the web browser and the
@@ -107,16 +108,18 @@ if err != nil { return err }
 u := connection.NewUpdate(request, returnUrl)
 
 // Set the raw SWAN data from the form associated with the request. Pass the 
-// OWID creator to each of the methods that generates an OWID. Check the err
-// indicator incase there was a problem generating the OWID from the input data
-// if if the input data did not pass validation.
-err = u.SetPref(creator, r.Form.Get("pref") == "on")
+// OWID signer to each of the methods that generates the OWID signed data 
+// structure. 
+// Check the err indicator incase there was a problem generating the OWID from 
+// the input data or if the input data did not pass validation.
 if err != nil { return err }
-err = u.SetEmail(creator, r.Form.Get("email"))
+u.Pref = NewPreferences(signer, r.Form.Get("pref") == "on")
 if err != nil { return err }
-err = u.SetSalt(creator, r.Form.Get("salt"))
+u.Email, err = NewEmail(signer, r.Form.Get("email"))
 if err != nil { return err }
-err = u.SetSWID(creator, r.Form.Get("swid"))
+u.Salt, err = NewSaltFromString(signer, r.Form.Get("salt"))
+if err != nil { return err }
+u.RID, err = IdentifierFromBase64(r.Form.Get("rid"))
 if err != nil { return err }
 
 // Get the storage operation URL to redirect the web browser to.
@@ -169,7 +172,7 @@ Example result in JSON format prior to conversion to SWAN pairs.
         "Value": "cool-creams.uk cool-bikes.uk"
     },
     {
-        "Key": "swid",
+        "Key": "rid",
         "Created": "2021-05-10T00:00:00Z",
         "Expires": "2021-08-05T00:00:00Z",
         "Value": "AjUxZGI...xjtRBQ"
@@ -185,7 +188,7 @@ Example result in JSON format prior to conversion to SWAN pairs.
 
 The returned keys map to the SWAN data. 
 
-The keys `swid`, `sid` and `pref` are OWIDs. 
+The keys `rid`, `sid` and `pref` have related OWIDs. 
 
 The key `val` contains the time when the caller should revalidate the SWAN data
 with SWAN via a call to Fetch. It is possible another tab in the same web
@@ -216,18 +219,18 @@ Example result.
     "state": [
         "Example state"
     ],
-    "swid": "AjUxZGIudWsAgdMK...TaK/AWD4tDXxjtRBQ",
+    "rid": "AjUxZGIudWsAgdMK...TaK/AWD4tDXxjtRBQ",
     "title": "SWAN Demo"
 }
 ```
 
-### CreateSWID
+### CreateRID
 
-Returns a new SWID in OWID from from the SWAN Operator. Only SWAN operators can
-create SWIDs.
+Returns a new RID with an OWID from from the SWAN Operator. Only SWAN operators
+can create RIDs.
 
 ```go
-swid := connection.CreateSWID()
+rid := connection.CreateRID()
 ```
 
 ### HomeNode

@@ -89,14 +89,14 @@ type Operation struct {
 }
 
 // Update operation from a User Interface Provider where the preferences, email
-// and salt have been captured. The SWID is returned from a previous call to
-// swan.CreateSWID.
+// and salt have been captured. The RID is returned from a previous call to
+// swan.CreateRID.
 type Update struct {
 	Operation
-	swid  *Identifier
-	pref  *Preferences
-	email *Email
-	salt  *ByteArray
+	RID   *Identifier  // Random [browser] Id - see CreateRID
+	Pref  *Preferences // Preference for marketing - see CreatePreferences
+	Email *Email       // Email address - see CreateEmail
+	Salt  *ByteArray   // Salt for SID - see CreateByteArray
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
@@ -237,7 +237,7 @@ func (u *Update) GetValues() (url.Values, error) {
 		return nil, err
 	}
 	q.Del("accessKey") // Known only to this party and must never be shared
-	q.Del("swid")      // Not to be shared with other browsers
+	q.Del("rid")       // Not to be shared with other browsers
 	// Used for home node operations that depend on the specific browser
 	q.Del("remoteAddr")
 	q.Del("X-Forwarded-For")
@@ -268,10 +268,10 @@ func (c *Connection) DecryptRaw(
 	return c.NewDecrypt(encrypted).decryptRaw()
 }
 
-// CreateSWID returns a new SWID in OWID format from the SWAN Operator. Only
-// SWAN Operators can create legitimate SWIDs.
-func (c *Connection) CreateSWID() (*Identifier, *Error) {
-	return c.NewSWAN().createSWID()
+// CreateRID returns a new RID in OWID format from the SWAN Operator. Only
+// SWAN Operators can create legitimate RIDs.
+func (c *Connection) CreateRID() (*Identifier, *Error) {
+	return c.NewSWAN().createRID()
 }
 
 // HomeNode returns the SWAN home node associated with the web browser.
@@ -324,8 +324,8 @@ func (e *Decrypt) decryptRaw() (map[string]interface{}, *Error) {
 	return r, nil
 }
 
-func (s *SWAN) createSWID() (*Identifier, *Error) {
-	b, se := requestAsByteArray(s, "create-swid", url.Values{})
+func (s *SWAN) createRID() (*Identifier, *Error) {
+	b, se := requestAsByteArray(s, "create-rid", url.Values{})
 	if se != nil {
 		return nil, se
 	}
@@ -475,7 +475,7 @@ func (f *Fetch) setData(q *url.Values) error {
 	}
 	if f.Existing != nil {
 		for _, v := range f.Existing {
-			if v.Key == "swid" || v.Key == "pref" {
+			if v.Key == "rid" || v.Key == "pref" {
 				switch t := v.Value.(type) {
 				case Field:
 					s, err := t.ToBase64()
@@ -496,29 +496,29 @@ func (u *Update) setData(q *url.Values) error {
 	if err != nil {
 		return err
 	}
-	if u.swid != nil {
-		s, err = u.swid.ToBase64()
+	if u.RID != nil {
+		s, err = u.RID.ToBase64()
 		if err != nil {
 			return err
 		}
-		q.Set("swid", s)
+		q.Set("rid", s)
 	}
-	if u.pref != nil {
-		s, err = u.pref.ToBase64()
+	if u.Pref != nil {
+		s, err = u.Pref.ToBase64()
 		if err != nil {
 			return err
 		}
 		q.Set("pref", s)
 	}
-	if u.email != nil {
-		s, err = u.email.ToBase64()
+	if u.Email != nil {
+		s, err = u.Email.ToBase64()
 		if err != nil {
 			return err
 		}
 		q.Set("email", s)
 	}
-	if u.salt != nil {
-		s, err = u.salt.ToBase64()
+	if u.Salt != nil {
+		s, err = u.Salt.ToBase64()
 		if err != nil {
 			return err
 		}

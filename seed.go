@@ -33,9 +33,9 @@ import (
 type Seed struct {
 	Base
 	PubDomain   string       `json:"pubDomain"`   // The domain that the advertisements will appear on
-	UUID        uuid.UUID    `json:"uuid"`        // A unique identifier for this ID
-	SWID        *Identifier  `json:"swid"`        // The Secure Web ID
-	SID         *ByteArray   `json:"sid"`         // The Signed In ID
+	UUID        uuid.UUID    `json:"uuid"`        // A unique identifier for this Id
+	RID         *Identifier  `json:"rid"`         // The Random [browser] Id
+	SID         *ByteArray   `json:"sid"`         // The Signed in Id
 	Preferences *Preferences `json:"preferences"` // The privacy preferences
 	Stopped     []string     `json:"stopped"`     // List of domains or advert IDs that should not be shown
 }
@@ -113,7 +113,7 @@ func (s *Seed) marshal(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = common.WriteMarshaller(b, s.SWID)
+	err = common.WriteMarshaller(b, s.RID)
 	if err != nil {
 		return err
 	}
@@ -143,10 +143,10 @@ func (s *Seed) UnmarshalBinary(data []byte) error {
 		if err != nil {
 			return err
 		}
-		if s.SWID == nil {
-			s.SWID = &Identifier{}
+		if s.RID == nil {
+			s.RID = &Identifier{}
 		}
-		err = common.ReadMarshaller(b, s.SWID)
+		err = common.ReadMarshaller(b, s.RID)
 		if err != nil {
 			return err
 		}

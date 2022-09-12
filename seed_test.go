@@ -48,7 +48,7 @@ func TestSeed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d.SWID, err = NewIdentifier(s, "type", u)
+	d.RID, err = NewIdentifier(s, "type", u)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -31,9 +31,9 @@ type Preferences struct {
 	Data PreferencesData `json:"data"`
 }
 
-func NewPreferences(s *owid.Signer, data bool) (*Preferences, error) {
+func NewPreferences(s *owid.Signer, personalizedMarketing bool) (*Preferences, error) {
 	var err error
-	p := &Preferences{Data: PreferencesData{data}}
+	p := &Preferences{Data: PreferencesData{personalizedMarketing}}
 	p.Version = swanVersion
 	p.OWID, err = s.CreateOWIDandSign(p)
 	if err != nil {
