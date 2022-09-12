@@ -52,21 +52,25 @@ func ByteArrayFromJson(j []byte) (*ByteArray, error) {
 	return &a, nil
 }
 
+func ByteArrayFromBase64(value string) (*ByteArray, error) {
+	var a ByteArray
+	err := a.FromBase64(value)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (a *ByteArray) FromBase64(value string) error {
+	return unmarshalString(a, value)
+}
+
 func (a *ByteArray) ToBase64() (string, error) {
 	b, err := a.MarshalBinary()
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func ByteArrayFromBase64(value string) (*ByteArray, error) {
-	var a ByteArray
-	err := unmarshalString(&a, value)
-	if err != nil {
-		return nil, err
-	}
-	return &a, nil
 }
 
 func (a *ByteArray) MarshalOwid() ([]byte, error) {

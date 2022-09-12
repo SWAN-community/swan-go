@@ -54,11 +54,15 @@ func PreferencesFromJson(j []byte) (*Preferences, error) {
 
 func PreferencesFromBase64(value string) (*Preferences, error) {
 	var p Preferences
-	err := unmarshalString(&p, value)
+	err := p.FromBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (p *Preferences) FromBase64(value string) error {
+	return unmarshalString(p, value)
 }
 
 func (p *Preferences) ToBase64() (string, error) {

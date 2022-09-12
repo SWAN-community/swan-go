@@ -95,6 +95,28 @@ func TestIdentifier(t *testing.T) {
 		// Verify the new instance with the signer.
 		verifyBase(t, s, &n.Base, true)
 	})
+	t.Run("cookie", func(t *testing.T) {
+
+		// Create a cookie pair and verify the correct result is returned.
+		p := Pair{Key: "id", Value: i}
+		c, err := p.AsCookie(s.Domain, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create a new pair from the cookie.
+		n, err := NewPairFromCookie(c, &Identifier{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the type is correct.
+		if v, ok := n.Value.(*Identifier); ok {
+			verifyBase(t, s, &v.Base, true)
+		} else {
+			t.Fatal("wrong type")
+		}
+	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the identifier and then verify them to confirm that they

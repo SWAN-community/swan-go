@@ -61,11 +61,15 @@ func IdentifierFromJson(j []byte) (*Identifier, error) {
 
 func IdentifierFromBase64(value string) (*Identifier, error) {
 	var i Identifier
-	err := unmarshalString(&i, value)
+	err := i.FromBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &i, nil
+}
+
+func (i *Identifier) FromBase64(value string) error {
+	return unmarshalString(i, value)
 }
 
 func (i *Identifier) ToBase64() (string, error) {

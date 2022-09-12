@@ -16,9 +16,12 @@
 
 package swan
 
-// Field type
+// Field type used with swan.Pair.
 type Field interface {
 
-	// Returns the field as a base64 string.
+	// Returns the field value as a base64 string.
 	ToBase64() (string, error)
+
+	// Populates the field values from the base64 string.
+	FromBase64(string) error
 }

@@ -81,11 +81,15 @@ func (a *Salt) ToBase64() (string, error) {
 
 func SaltFromBase64(value string) (*Salt, error) {
 	var a Salt
-	err := unmarshalString(&a, value)
+	err := a.FromBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
+}
+
+func (a *Salt) FromBase64(value string) error {
+	return unmarshalString(a, value)
 }
 
 func (a *Salt) MarshalOwid() ([]byte, error) {

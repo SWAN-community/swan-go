@@ -90,6 +90,28 @@ func TestSalt(t *testing.T) {
 		// Verify the new instance with the signer.
 		verifyBase(t, s, &n.Base, true)
 	})
+	t.Run("cookie", func(t *testing.T) {
+
+		// Create a cookie pair and verify the correct result is returned.
+		p := Pair{Key: "salt", Value: a}
+		c, err := p.AsCookie(s.Domain, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create a new pair from the cookie.
+		n, err := NewPairFromCookie(c, &Salt{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the type is correct.
+		if v, ok := n.Value.(*Salt); ok {
+			verifyBase(t, s, &v.Base, true)
+		} else {
+			t.Fatal("wrong type")
+		}
+	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the salt and then verify them to confirm that they

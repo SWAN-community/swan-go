@@ -17,9 +17,6 @@
 package swan
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/gob"
 	"net/http"
 	"strings"
 	"time"
@@ -35,7 +32,7 @@ type Pair struct {
 	Created time.Time // The UTC time when the value was created
 	// The UTC time when the value will expire and should not be used
 	Expires time.Time
-	Value   interface{} // The value associated with the key
+	Value   Field // The value associated with the key
 }
 
 // CookieName name for any cookie associated with the SWAN pair.
@@ -47,44 +44,41 @@ func IsSWANCookie(c *http.Cookie) bool {
 }
 
 // NewPairFromCookie creates a new SWAN pair from the cookie.
-func NewPairFromCookie(c *http.Cookie) (*Pair, error) {
-	n := c.Name
-	if IsSWANCookie(c) {
-		n = c.Name[len(cookiePrefix):]
+// cookie as source for the pair.
+// value instance to be assigned to the pair.
+func NewPairFromCookie(cookie *http.Cookie, value Field) (*Pair, error) {
+	n := cookie.Name
+	if IsSWANCookie(cookie) {
+		n = cookie.Name[len(cookiePrefix):]
 	}
-	b, err := base64.StdEncoding.DecodeString(c.Value)
+	err := value.FromBase64(cookie.Value)
 	if err != nil {
 		return nil, err
 	}
-	p := Pair{Key: n}
-	err = gob.NewDecoder(bytes.NewBuffer(b)).Decode(p.Value)
-	if err != nil {
-		return nil, err
-	}
-	return &p, nil
+	return &Pair{Key: n, Value: value}, nil
 }
 
 // AsCookie returns the pair as a cookie to be used in an HTTP response.
-func (p *Pair) AsCookie(
-	r *http.Request,
-	w http.ResponseWriter,
-	s bool) (*http.Cookie, error) {
-	var b bytes.Buffer
-	err := gob.NewEncoder(&b).Encode(p.Value)
+// host to use for the domain of the cookie.
+// secure
+func (p *Pair) AsCookie(host string, secure bool) (*http.Cookie, error) {
+	v, err := p.Value.ToBase64()
 	if err != nil {
 		return nil, err
 	}
 	return &http.Cookie{
 		Name:     p.CookieName(),
-		Domain:   getDomain(r.Host),                            // Specifically to this domain
-		Value:    base64.StdEncoding.EncodeToString(b.Bytes()), // The value as a base 64 string
-		SameSite: http.SameSiteLaxMode,                         // Available to all paths
+		Domain:   getDomain(host),      // Specifically to this domain
+		Value:    v,                    // The value as a base 64 string
+		SameSite: http.SameSiteLaxMode, // Available to all paths
 		HttpOnly: false,
-		Secure:   s, // Secure if HTTPs, otherwise false.
+		Secure:   secure, // Secure if HTTPs, otherwise false.
 		// Set the cookie expiry time to the same as the SWAN pair.
 		Expires: p.Expires}, nil
 }
 
+// Remove any port information that may be included in the host as this is not
+// used by cookies.
 func getDomain(h string) string {
 	s := strings.Split(h, ":")
 	return s[0]

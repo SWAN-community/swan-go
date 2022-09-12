@@ -54,11 +54,15 @@ func EmailFromJson(j []byte) (*Email, error) {
 
 func EmailFromBase64(value string) (*Email, error) {
 	var e Email
-	err := unmarshalString(&e, value)
+	err := e.FromBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &e, nil
+}
+
+func (e *Email) FromBase64(value string) error {
+	return unmarshalString(e, value)
 }
 
 func (e *Email) ToBase64() (string, error) {
