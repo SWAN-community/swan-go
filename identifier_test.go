@@ -45,13 +45,13 @@ func TestIdentifier(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the identifier.
-		b, err := i.ToBase64()
+		b, err := i.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the identifier from the base64 string.
-		n, err := IdentifierFromBase64(b)
+		n, err := IdentifierUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

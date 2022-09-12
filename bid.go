@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -55,29 +54,25 @@ func BidFromJson(j []byte) (*Bid, error) {
 	return &a, nil
 }
 
-func (a *Bid) ToBase64() (string, error) {
-	b, err := a.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func BidFromBase64(value string) (*Bid, error) {
+func BidUnmarshalBase64(value []byte) (*Bid, error) {
 	var a Bid
-	err := unmarshalString(&a, value)
+	err := unmarshalBase64(&a, value)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
+func (a *Bid) MarshalBase64() ([]byte, error) {
+	return a.marshalBase64(a.marshal)
+}
+
 func (a *Bid) MarshalOwid() ([]byte, error) {
-	return a.marshalOwid(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalOwid(a.marshal)
 }
 
 func (a *Bid) MarshalBinary() ([]byte, error) {
-	return a.marshalBinary(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalBinary(a.marshal)
 }
 
 func (a *Bid) marshal(b *bytes.Buffer) error {
@@ -96,7 +91,10 @@ func (a *Bid) UnmarshalBinary(data []byte) error {
 	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
 		var err error
 		if a.StructType != responseBid {
-			return fmt.Errorf("struct type not bid '%d'", responseBid)
+			return fmt.Errorf(
+				"struct type '%d' not bid '%d'",
+				a.StructType,
+				responseBid)
 		}
 		a.MediaURL, err = common.ReadString(b)
 		if err != nil {

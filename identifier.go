@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
@@ -59,33 +58,29 @@ func IdentifierFromJson(j []byte) (*Identifier, error) {
 	return &i, nil
 }
 
-func IdentifierFromBase64(value string) (*Identifier, error) {
+func IdentifierUnmarshalBase64(value []byte) (*Identifier, error) {
 	var i Identifier
-	err := i.FromBase64(value)
+	err := i.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &i, nil
 }
 
-func (i *Identifier) FromBase64(value string) error {
-	return unmarshalString(i, value)
+func (i *Identifier) UnmarshalBase64(value []byte) error {
+	return unmarshalBase64(i, value)
 }
 
-func (i *Identifier) ToBase64() (string, error) {
-	b, err := i.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
+func (i *Identifier) MarshalBase64() ([]byte, error) {
+	return i.marshalBase64(i.marshal)
 }
 
 func (i *Identifier) MarshalOwid() ([]byte, error) {
-	return i.marshalOwid(func(b *bytes.Buffer) error { return i.marshal(b) })
+	return i.marshalOwid(i.marshal)
 }
 
 func (i *Identifier) MarshalBinary() ([]byte, error) {
-	return i.marshalBinary(func(b *bytes.Buffer) error { return i.marshal(b) })
+	return i.marshalBinary(i.marshal)
 }
 
 func (i *Identifier) marshal(b *bytes.Buffer) error {

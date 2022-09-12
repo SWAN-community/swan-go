@@ -40,13 +40,13 @@ func TestPreferences(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the preferences.
-		b, err := p.ToBase64()
+		b, err := p.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the preferences from the base64 string.
-		n, err := PreferencesFromBase64(b)
+		n, err := PreferencesUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -72,13 +72,13 @@ func TestSeed(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the seed.
-		b, err := d.ToBase64()
+		b, err := d.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the seed from the base64 string.
-		n, err := SeedFromBase64(b)
+		n, err := SeedUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

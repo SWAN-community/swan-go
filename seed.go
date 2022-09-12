@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -59,21 +58,13 @@ func SeedFromJson(j []byte) (*Seed, error) {
 	return &s, nil
 }
 
-func SeedFromBase64(value string) (*Seed, error) {
+func SeedUnmarshalBase64(value []byte) (*Seed, error) {
 	var s Seed
-	err := unmarshalString(&s, value)
+	err := unmarshalBase64(&s, value)
 	if err != nil {
 		return nil, err
 	}
 	return &s, nil
-}
-
-func (s *Seed) ToBase64() (string, error) {
-	b, err := s.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
 }
 
 // Sign the seed including all the fields included.
@@ -96,12 +87,16 @@ func (s *Seed) IsStopped(u string) bool {
 	return false
 }
 
+func (s *Seed) MarshalBase64() ([]byte, error) {
+	return s.marshalBase64(s.marshal)
+}
+
 func (s *Seed) MarshalOwid() ([]byte, error) {
-	return s.marshalOwid(func(b *bytes.Buffer) error { return s.marshal(b) })
+	return s.marshalOwid(s.marshal)
 }
 
 func (s *Seed) MarshalBinary() ([]byte, error) {
-	return s.marshalBinary(func(b *bytes.Buffer) error { return s.marshal(b) })
+	return s.marshalBinary(s.marshal)
 }
 
 func (s *Seed) marshal(b *bytes.Buffer) error {

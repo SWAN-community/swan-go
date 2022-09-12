@@ -52,29 +52,29 @@ func PreferencesFromJson(j []byte) (*Preferences, error) {
 	return &p, nil
 }
 
-func PreferencesFromBase64(value string) (*Preferences, error) {
+func PreferencesUnmarshalBase64(value []byte) (*Preferences, error) {
 	var p Preferences
-	err := p.FromBase64(value)
+	err := p.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &p, nil
 }
 
-func (p *Preferences) FromBase64(value string) error {
-	return unmarshalString(p, value)
+func (p *Preferences) UnmarshalBase64(value []byte) error {
+	return unmarshalBase64(p, value)
 }
 
-func (p *Preferences) ToBase64() (string, error) {
-	return p.toBase64(func(b *bytes.Buffer) error { return p.marshal(b) })
+func (p *Preferences) MarshalBase64() ([]byte, error) {
+	return p.marshalBase64(p.marshal)
 }
 
 func (p *Preferences) MarshalOwid() ([]byte, error) {
-	return p.marshalOwid(func(b *bytes.Buffer) error { return p.marshal(b) })
+	return p.marshalOwid(p.marshal)
 }
 
 func (p *Preferences) MarshalBinary() ([]byte, error) {
-	return p.marshalBinary(func(b *bytes.Buffer) error { return p.marshal(b) })
+	return p.marshalBinary(p.marshal)
 }
 
 func (p *Preferences) marshal(b *bytes.Buffer) error {

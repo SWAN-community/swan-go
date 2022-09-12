@@ -40,13 +40,13 @@ func TestBid(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the bid.
-		b, err := i.ToBase64()
+		b, err := i.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the bid from the base64 string.
-		n, err := BidFromBase64(b)
+		n, err := BidUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

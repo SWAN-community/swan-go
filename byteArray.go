@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
@@ -52,33 +51,29 @@ func ByteArrayFromJson(j []byte) (*ByteArray, error) {
 	return &a, nil
 }
 
-func ByteArrayFromBase64(value string) (*ByteArray, error) {
+func ByteArrayUnmarshalBase64(value []byte) (*ByteArray, error) {
 	var a ByteArray
-	err := a.FromBase64(value)
+	err := a.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
-func (a *ByteArray) FromBase64(value string) error {
-	return unmarshalString(a, value)
+func (a *ByteArray) UnmarshalBase64(value []byte) error {
+	return unmarshalBase64(a, value)
 }
 
-func (a *ByteArray) ToBase64() (string, error) {
-	b, err := a.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
+func (a *ByteArray) MarshalBase64() ([]byte, error) {
+	return a.marshalBase64(a.marshal)
 }
 
 func (a *ByteArray) MarshalOwid() ([]byte, error) {
-	return a.marshalOwid(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalOwid(a.marshal)
 }
 
 func (a *ByteArray) MarshalBinary() ([]byte, error) {
-	return a.marshalBinary(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalBinary(a.marshal)
 }
 
 func (a *ByteArray) marshal(b *bytes.Buffer) error {

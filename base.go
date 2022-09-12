@@ -69,15 +69,6 @@ func (b *Base) marshalBinary(f func(*bytes.Buffer) error) ([]byte, error) {
 	return u.Bytes(), nil
 }
 
-// toBase64 encodes the marshalBinary result as a base64 string.
-func (b *Base) toBase64(f func(*bytes.Buffer) error) (string, error) {
-	d, err := b.marshalBinary(f)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(d), nil
-}
-
 // unmarshalBinary handles converting a byte array into all the fields of a
 // structure that inherits from Base.
 // m the marshaler for the OWID
@@ -110,10 +101,19 @@ func (b *Base) unmarshalBinary(
 	return nil
 }
 
-// unmarshalString uses the unmarshaler to read the byte array contained in the
+// marshalBase64 encodes the marshalBinary result as a base64 string.
+func (b *Base) marshalBase64(f func(*bytes.Buffer) error) ([]byte, error) {
+	s, err := b.marshalBinary(f)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(base64.StdEncoding.EncodeToString(s)), nil
+}
+
+// unmarshalBase64 uses the unmarshaler to read the byte array contained in the
 // base64 encoded string.
-func unmarshalString(b encoding.BinaryUnmarshaler, s string) error {
-	d, err := base64.StdEncoding.DecodeString(s)
+func unmarshalBase64(b encoding.BinaryUnmarshaler, s []byte) error {
+	d, err := base64.StdEncoding.DecodeString(string(s))
 	if err != nil {
 		return err
 	}

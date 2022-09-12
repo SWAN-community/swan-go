@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -52,6 +53,15 @@ func (r *Response) writeData(u *bytes.Buffer, f func(*bytes.Buffer) error) error
 		}
 		return nil
 	})
+}
+
+// marshalBase64 encodes the marshalBinary result as a base64 string.
+func (r *Response) marshalBase64(f func(*bytes.Buffer) error) ([]byte, error) {
+	s, err := r.marshalBinary(f)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(base64.StdEncoding.EncodeToString(s)), nil
 }
 
 // marshalOwid returns a byte array of all the data needed by an OWID.

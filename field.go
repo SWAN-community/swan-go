@@ -20,7 +20,7 @@ package swan
 type Field interface {
 
 	// Returns the field value as a base64 string.
-	ToBase64() (string, error)
+	MarshalBase64() ([]byte, error)
 
 	// Populates the field values from the base64 string.
 	FromBase64(string) error

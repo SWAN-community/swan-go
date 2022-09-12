@@ -40,13 +40,13 @@ func TestByteArray(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the byte array.
-		b, err := a.ToBase64()
+		b, err := a.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the byte array from the base64 string.
-		n, err := ByteArrayFromBase64(b)
+		n, err := ByteArrayUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

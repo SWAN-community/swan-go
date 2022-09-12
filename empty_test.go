@@ -40,13 +40,13 @@ func TestEmpty(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the empty.
-		b, err := e.ToBase64()
+		b, err := e.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the empty from the base64 string.
-		n, err := EmptyFromBase64(b)
+		n, err := EmptyUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

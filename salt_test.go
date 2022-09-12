@@ -40,13 +40,13 @@ func TestSalt(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the salt.
-		b, err := a.ToBase64()
+		b, err := a.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the salt from the base64 string.
-		n, err := SaltFromBase64(b)
+		n, err := SaltUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

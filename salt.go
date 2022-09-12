@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"strconv"
 
@@ -71,33 +70,29 @@ func SaltFromJson(j []byte) (*Salt, error) {
 	return &a, nil
 }
 
-func (a *Salt) ToBase64() (string, error) {
-	b, err := a.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func SaltFromBase64(value string) (*Salt, error) {
+func SaltUnmarshalBase64(value []byte) (*Salt, error) {
 	var a Salt
-	err := a.FromBase64(value)
+	err := a.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
-func (a *Salt) FromBase64(value string) error {
-	return unmarshalString(a, value)
+func (a *Salt) UnmarshalBase64(value []byte) error {
+	return unmarshalBase64(a, value)
+}
+
+func (a *Salt) MarshalBase64() ([]byte, error) {
+	return a.marshalBase64(a.marshal)
 }
 
 func (a *Salt) MarshalOwid() ([]byte, error) {
-	return a.marshalOwid(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalOwid(a.marshal)
 }
 
 func (a *Salt) MarshalBinary() ([]byte, error) {
-	return a.marshalBinary(func(b *bytes.Buffer) error { return a.marshal(b) })
+	return a.marshalBinary(a.marshal)
 }
 
 func (a *Salt) marshal(b *bytes.Buffer) error {

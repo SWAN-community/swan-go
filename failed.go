@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -56,29 +55,25 @@ func FailedFromJson(j []byte) (*Failed, error) {
 	return &a, nil
 }
 
-func (f *Failed) ToBase64() (string, error) {
-	b, err := f.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func FailedFromBase64(value string) (*Failed, error) {
+func FailedUnmarshalBase64(value []byte) (*Failed, error) {
 	var a Failed
-	err := unmarshalString(&a, value)
+	err := unmarshalBase64(&a, value)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
+func (f *Failed) MarshalBase64() ([]byte, error) {
+	return f.marshalBase64(f.marshal)
+}
+
 func (f *Failed) MarshalOwid() ([]byte, error) {
-	return f.marshalOwid(func(b *bytes.Buffer) error { return f.marshal(b) })
+	return f.marshalOwid(f.marshal)
 }
 
 func (f *Failed) MarshalBinary() ([]byte, error) {
-	return f.marshalBinary(func(b *bytes.Buffer) error { return f.marshal(b) })
+	return f.marshalBinary(f.marshal)
 }
 
 func (f *Failed) marshal(b *bytes.Buffer) error {

@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
@@ -52,33 +51,29 @@ func EmailFromJson(j []byte) (*Email, error) {
 	return &e, nil
 }
 
-func EmailFromBase64(value string) (*Email, error) {
+func EmailUnmarshalBase64(value []byte) (*Email, error) {
 	var e Email
-	err := e.FromBase64(value)
+	err := e.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
 	return &e, nil
 }
 
-func (e *Email) FromBase64(value string) error {
-	return unmarshalString(e, value)
+func (e *Email) UnmarshalBase64(value []byte) error {
+	return unmarshalBase64(e, value)
 }
 
-func (e *Email) ToBase64() (string, error) {
-	b, err := e.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
+func (e *Email) MarshalBase64() ([]byte, error) {
+	return e.marshalBase64(e.marshal)
 }
 
 func (e *Email) MarshalOwid() ([]byte, error) {
-	return e.marshalOwid(func(b *bytes.Buffer) error { return e.marshal(b) })
+	return e.marshalOwid(e.marshal)
 }
 
 func (e *Email) MarshalBinary() ([]byte, error) {
-	return e.marshalBinary(func(b *bytes.Buffer) error { return e.marshal(b) })
+	return e.marshalBinary(e.marshal)
 }
 
 func (e *Email) marshal(b *bytes.Buffer) error {

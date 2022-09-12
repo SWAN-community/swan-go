@@ -40,13 +40,13 @@ func TestEmail(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the email.
-		b, err := e.ToBase64()
+		b, err := e.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the email from the base64 string.
-		n, err := EmailFromBase64(b)
+		n, err := EmailUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}

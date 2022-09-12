@@ -478,11 +478,11 @@ func (f *Fetch) setData(q *url.Values) error {
 			if v.Key == "rid" || v.Key == "pref" {
 				switch t := v.Value.(type) {
 				case Field:
-					s, err := t.ToBase64()
+					s, err := t.MarshalBase64()
 					if err != nil {
 						return err
 					}
-					q.Set(v.Key, s)
+					q.Set(v.Key, string(s))
 				}
 			}
 		}
@@ -491,38 +491,38 @@ func (f *Fetch) setData(q *url.Values) error {
 }
 
 func (u *Update) setData(q *url.Values) error {
-	var s string
+	var s []byte
 	err := u.Operation.setData(q)
 	if err != nil {
 		return err
 	}
 	if u.RID != nil {
-		s, err = u.RID.ToBase64()
+		s, err = u.RID.MarshalBase64()
 		if err != nil {
 			return err
 		}
-		q.Set("rid", s)
+		q.Set("rid", string(s))
 	}
 	if u.Pref != nil {
-		s, err = u.Pref.ToBase64()
+		s, err = u.Pref.MarshalBase64()
 		if err != nil {
 			return err
 		}
-		q.Set("pref", s)
+		q.Set("pref", string(s))
 	}
 	if u.Email != nil {
-		s, err = u.Email.ToBase64()
+		s, err = u.Email.MarshalBase64()
 		if err != nil {
 			return err
 		}
-		q.Set("email", s)
+		q.Set("email", string(s))
 	}
 	if u.Salt != nil {
-		s, err = u.Salt.ToBase64()
+		s, err = u.Salt.MarshalBase64()
 		if err != nil {
 			return err
 		}
-		q.Set("salt", s)
+		q.Set("salt", string(s))
 	}
 	return nil
 }

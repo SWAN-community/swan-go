@@ -40,13 +40,13 @@ func TestFailed(t *testing.T) {
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the failed.
-		b, err := f.ToBase64()
+		b, err := f.MarshalBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new instance of the failed from the base64 string.
-		n, err := FailedFromBase64(b)
+		n, err := FailedUnmarshalBase64(b)
 		if err != nil {
 			t.Fatal(err)
 		}
