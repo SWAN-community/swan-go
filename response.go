@@ -18,6 +18,8 @@ package swan
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -25,10 +27,10 @@ import (
 
 // First byte of the data structure will be the type of response.
 const (
-	responseBid    byte = iota
-	responseID     byte = iota
-	responseFailed byte = iota
-	responseEmpty  byte = iota
+	responseBid byte = iota + 1
+	responseID
+	responseFailed
+	responseEmpty
 )
 
 // Response from an OpenRTB transation.
@@ -98,4 +100,38 @@ func (r *Response) unmarshalBinary(
 		}
 		return nil
 	})
+}
+
+// ResponseFromJSON returns an instance of Bid, Failed, or Empty for the JSON
+// provided, or an error if the JSON can not be unmarshalled to a response.
+func ResponseFromJSON(j []byte) (interface{}, error) {
+	var r Response
+	err := json.Unmarshal(j, &r)
+	if err != nil {
+		return nil, err
+	}
+	var i interface{ owid.Marshaler }
+	var b *Base
+	switch r.StructType {
+	case responseBid:
+		var n Bid
+		b = &n.Base
+		i = &n
+	case responseEmpty:
+		var n Empty
+		b = &n.Base
+		i = &n
+	case responseFailed:
+		var n Failed
+		b = &n.Base
+		i = &n
+	default:
+		return nil, fmt.Errorf("type '%d' unknown", r.StructType)
+	}
+	json.Unmarshal(j, i)
+	if err != nil {
+		return nil, err
+	}
+	b.OWID.Target = i
+	return i, nil
 }

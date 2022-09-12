@@ -90,6 +90,27 @@ func TestFailed(t *testing.T) {
 		// Verify the new instance with the signer.
 		verifyBase(t, s, &n.Base, true)
 	})
+	t.Run("response", func(t *testing.T) {
+
+		// Get a JSON representation.
+		j, err := json.Marshal(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Unmarshall it as an unknown response type.
+		i, err := ResponseFromJSON(j)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Check the type.
+		if n, ok := i.(*Failed); ok {
+			verifyBase(t, s, &n.Base, true)
+		} else {
+			t.Fatal(err)
+		}
+	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the failed and then verify them to confirm that they

@@ -27,7 +27,7 @@ func TestEmpty(t *testing.T) {
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new empty.
-	i, err := NewEmpty(s)
+	e, err := NewEmpty(s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,12 +35,12 @@ func TestEmpty(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the empty and check that they pass.
-		verifyBase(t, s, &i.Base, true)
+		verifyBase(t, s, &e.Base, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
 		// Get a base64 string representation of the empty.
-		b, err := i.ToBase64()
+		b, err := e.ToBase64()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -57,7 +57,7 @@ func TestEmpty(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 
 		// Get a JSON representation of the empty.
-		j, err := json.Marshal(i)
+		j, err := json.Marshal(e)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -75,7 +75,7 @@ func TestEmpty(t *testing.T) {
 	t.Run("binary", func(t *testing.T) {
 
 		// Get a binary representation of the empty.
-		b, err := i.MarshalBinary()
+		b, err := e.MarshalBinary()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,11 +90,32 @@ func TestEmpty(t *testing.T) {
 		// Verify the new instance with the signer.
 		verifyBase(t, s, &n.Base, true)
 	})
+	t.Run("response", func(t *testing.T) {
+
+		// Get a JSON representation.
+		j, err := json.Marshal(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Unmarshall it as an unknown response type.
+		i, err := ResponseFromJSON(j)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Check the type.
+		if n, ok := i.(*Empty); ok {
+			verifyBase(t, s, &n.Base, true)
+		} else {
+			t.Fatal(err)
+		}
+	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the empty and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
-		i.StructType = 0
-		verifyBase(t, s, &i.Base, false)
+		e.StructType = 0
+		verifyBase(t, s, &e.Base, false)
 	})
 }
