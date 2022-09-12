@@ -19,9 +19,9 @@ package swan
 // Field type used with swan.Pair.
 type Field interface {
 
-	// Returns the field value as a base64 string.
+	// Returns the instance as a base64 string.
 	MarshalBase64() ([]byte, error)
 
-	// Populates the field values from the base64 string.
-	FromBase64(string) error
+	// Sets the instance fields from the base64 byte array.
+	UnmarshalBase64(value []byte) error
 }

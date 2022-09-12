@@ -93,24 +93,27 @@ func TestEmail(t *testing.T) {
 	t.Run("cookie", func(t *testing.T) {
 
 		// Create a cookie pair and verify the correct result is returned.
-		p := Pair{Key: "email", Value: e}
+		p, err := NewPairFromField("email", e)
+		if err != nil {
+			t.Fatal(err)
+		}
 		c, err := p.AsCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c, &Email{})
+		n, err := NewPairFromCookie(c)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify that the type is correct.
-		if v, ok := n.Value.(*Email); ok {
-			verifyBase(t, s, &v.Base, true)
-		} else {
-			t.Fatal("wrong type")
+		v, err := EmailUnmarshalBase64([]byte(n.Value))
+		if err != nil {
+			t.Fatal(err)
 		}
+		verifyBase(t, s, &v.Base, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 

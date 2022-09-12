@@ -476,14 +476,7 @@ func (f *Fetch) setData(q *url.Values) error {
 	if f.Existing != nil {
 		for _, v := range f.Existing {
 			if v.Key == "rid" || v.Key == "pref" {
-				switch t := v.Value.(type) {
-				case Field:
-					s, err := t.MarshalBase64()
-					if err != nil {
-						return err
-					}
-					q.Set(v.Key, string(s))
-				}
+				q.Set(v.Key, v.Value)
 			}
 		}
 	}

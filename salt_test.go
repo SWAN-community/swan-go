@@ -93,24 +93,27 @@ func TestSalt(t *testing.T) {
 	t.Run("cookie", func(t *testing.T) {
 
 		// Create a cookie pair and verify the correct result is returned.
-		p := Pair{Key: "salt", Value: a}
+		p, err := NewPairFromField("salt", a)
+		if err != nil {
+			t.Fatal(err)
+		}
 		c, err := p.AsCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c, &Salt{})
+		n, err := NewPairFromCookie(c)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify that the type is correct.
-		if v, ok := n.Value.(*Salt); ok {
-			verifyBase(t, s, &v.Base, true)
-		} else {
-			t.Fatal("wrong type")
+		v, err := SaltUnmarshalBase64([]byte(n.Value))
+		if err != nil {
+			t.Fatal(err)
 		}
+		verifyBase(t, s, &v.Base, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
