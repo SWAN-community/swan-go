@@ -33,6 +33,15 @@ type Salt struct {
 	Salt uint32 `json:"salt"`
 }
 
+func (s *Salt) AsByteArray() ([]byte, error) {
+	var b bytes.Buffer
+	err := common.WriteUint32(&b, s.Salt)
+	if err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
 func NewSaltFromString(s *owid.Signer, data string) (*Salt, error) {
 	i, err := strconv.Atoi(data)
 	if err != nil {
