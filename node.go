@@ -51,3 +51,44 @@ func (n *Node) SetFailed(
 	n.Failed, err = NewFailed(signer, seed, host, message)
 	return err
 }
+
+// FindFirst returns the first node in the tree under this one that when passed
+// the function provided returns true. Nil is returned if no nodes fulfill the
+// criteria.
+func (n *Node) FindFirst(f func(*Node) (bool, error)) (*Node, error) {
+	r, err := f(n)
+	if err != nil {
+		return nil, err
+	}
+	if r {
+		return n, nil
+	}
+	for _, i := range n.Children {
+		c, err := i.FindFirst(f)
+		if err != nil {
+			return nil, err
+		}
+		if c != nil {
+			return c, nil
+		}
+	}
+	return nil, nil
+}
+
+// AddMatching adds any matching nodes to the array passed into the method.
+func (n *Node) AddMatching(m *[]*Node, f func(*Node) (bool, error)) error {
+	r, err := f(n)
+	if err != nil {
+		return err
+	}
+	if r {
+		*m = append(*m, n)
+	}
+	for _, i := range n.Children {
+		err := i.AddMatching(m, f)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

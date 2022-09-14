@@ -179,5 +179,40 @@ func TestNode(t *testing.T) {
 				t.Fatal("child has no value")
 			}
 		}
+
+		// Find the first bid.
+		f, err := c.FindFirst(func(n *Node) (bool, error) {
+			return n.Bid != nil, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if f.Bid == nil {
+			t.Fatal("find first failed")
+		}
+
+		// Find all the empty nodes.
+		m := make([]*Node, 0, 4)
+		err = c.AddMatching(&m, func(n *Node) (bool, error) {
+			return n.Empty != nil, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(m) != 2 {
+			t.Fatal("add 2 matching failed")
+		}
+
+		// Find no nodes.
+		m = make([]*Node, 0, 4)
+		err = c.AddMatching(&m, func(n *Node) (bool, error) {
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(m) != 0 {
+			t.Fatal("add 0 matching failed")
+		}
 	})
 }
