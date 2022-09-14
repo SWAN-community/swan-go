@@ -19,7 +19,6 @@ package swan
 import (
 	"bytes"
 	"encoding/json"
-	"strconv"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -29,27 +28,18 @@ import (
 // to form the Signed in Id (SID).
 type Salt struct {
 	Base
-	Salt uint32 `json:"salt"`
+	Salt []byte `json:"salt"`
 }
 
-func (s *Salt) AsByteArray() ([]byte, error) {
-	var b bytes.Buffer
-	err := common.WriteUint32(&b, s.Salt)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
+func (s *Salt) AsPrintable() string {
+	return string(s.Salt)
 }
 
 func NewSaltFromString(s *owid.Signer, data string) (*Salt, error) {
-	i, err := strconv.Atoi(data)
-	if err != nil {
-		return nil, err
-	}
-	return NewSalt(s, uint32(i))
+	return NewSalt(s, []byte(data))
 }
 
-func NewSalt(s *owid.Signer, data uint32) (*Salt, error) {
+func NewSalt(s *owid.Signer, data []byte) (*Salt, error) {
 	var err error
 	a := &Salt{Salt: data}
 	a.Version = swanVersion
@@ -96,7 +86,7 @@ func (a *Salt) MarshalBinary() ([]byte, error) {
 }
 
 func (a *Salt) marshal(b *bytes.Buffer) error {
-	err := common.WriteUint32(b, a.Salt)
+	err := common.WriteByteArray(b, a.Salt)
 	if err != nil {
 		return err
 	}
@@ -106,7 +96,7 @@ func (a *Salt) marshal(b *bytes.Buffer) error {
 func (a *Salt) UnmarshalBinary(data []byte) error {
 	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
 		var err error
-		a.Salt, err = common.ReadUint32(b)
+		a.Salt, err = common.ReadByteArray(b)
 		if err != nil {
 			return err
 		}

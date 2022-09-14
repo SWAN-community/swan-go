@@ -24,14 +24,21 @@ import (
 )
 
 func TestSalt(t *testing.T) {
+	const testSalt = "123456"
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new salt with the from string method.
-	a, err := NewSaltFromString(s, "1234")
+	a, err := NewSaltFromString(s, testSalt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	t.Run("printable", func(t *testing.T) {
+		v := a.AsPrintable()
+		if v != testSalt {
+			t.Fatal(v)
+		}
+	})
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the salt and check that they pass.
@@ -119,7 +126,7 @@ func TestSalt(t *testing.T) {
 
 		// Change the salt and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
-		a.Salt = 2
+		a.Salt = []byte{2}
 		verifyBase(t, s, &a.Base, false)
 	})
 }

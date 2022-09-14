@@ -32,6 +32,12 @@ func TestPreferences(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("printable", func(t *testing.T) {
+		v := p.AsPrintable()
+		if v != "{\"use_browsing_for_personalization\":true}" {
+			t.Fatal(v)
+		}
+	})
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the preferences and check that they pass.

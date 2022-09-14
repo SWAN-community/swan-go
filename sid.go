@@ -28,12 +28,8 @@ func NewSID(signer *owid.Signer, email *Email, salt *Salt) (*ByteArray, error) {
 	if len(email.Email) == 0 {
 		return NewByteArray(signer, []byte{})
 	}
-	a, err := salt.AsByteArray()
-	if err != nil {
-		return nil, err
-	}
 	hasher := sha256.New()
-	hasher.Write(append([]byte(email.Email), a...))
+	hasher.Write(append([]byte(email.Email), salt.Salt...))
 	b := hasher.Sum(nil)
 	return NewByteArray(signer, b)
 }

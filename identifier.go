@@ -34,6 +34,10 @@ type Identifier struct {
 	Persisted bool      // True if the value has been stored.
 }
 
+func (i *Identifier) AsPrintable() string {
+	return i.Value.String()
+}
+
 func NewIdentifier(
 	s *owid.Signer,
 	idType string,

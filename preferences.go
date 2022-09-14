@@ -31,6 +31,14 @@ type Preferences struct {
 	Data PreferencesData `json:"data"`
 }
 
+func (p *Preferences) AsPrintable() string {
+	b, err := json.Marshal(p.Data)
+	if err != nil {
+		return "<err>"
+	}
+	return string(b)
+}
+
 func NewPreferences(s *owid.Signer, personalizedMarketing bool) (*Preferences, error) {
 	var err error
 	p := &Preferences{Data: PreferencesData{personalizedMarketing}}

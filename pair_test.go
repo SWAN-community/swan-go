@@ -22,14 +22,13 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
-var pairByteArray = []byte{1, 2, 3, 4}
-
 func TestPair(t *testing.T) {
+	pairByteArray := []byte{1, 2, 3, 4}
 
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new byte array.
-	a, err := NewByteArray(s, []byte{1, 2, 3, 4})
+	a, err := NewByteArray(s, pairByteArray)
 	if err != nil {
 		t.Fatal(err)
 	}

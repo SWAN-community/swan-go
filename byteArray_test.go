@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 
@@ -24,14 +25,21 @@ import (
 )
 
 func TestByteArray(t *testing.T) {
+	testByteArray := []byte{1, 2, 3, 4}
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new byte array.
-	a, err := NewByteArray(s, []byte{1, 2, 3, 4})
+	a, err := NewByteArray(s, testByteArray)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	t.Run("printable", func(t *testing.T) {
+		v := a.AsPrintable()
+		if v != hex.EncodeToString(testByteArray) {
+			t.Fatal()
+		}
+	})
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the byte array and check that they pass.

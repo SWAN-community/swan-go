@@ -37,6 +37,12 @@ func TestIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("printable", func(t *testing.T) {
+		v := i.AsPrintable()
+		if v != u.String() {
+			t.Fatal()
+		}
+	})
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the identifier and check that they pass.

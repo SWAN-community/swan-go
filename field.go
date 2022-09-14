@@ -24,4 +24,7 @@ type Field interface {
 
 	// Sets the instance fields from the base64 byte array.
 	UnmarshalBase64(value []byte) error
+
+	// Gets a human readable version of the field content.
+	AsPrintable() string
 }

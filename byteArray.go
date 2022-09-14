@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
@@ -28,6 +29,10 @@ import (
 type ByteArray struct {
 	Base
 	Data []byte `json:"data"`
+}
+
+func (a *ByteArray) AsPrintable() string {
+	return hex.EncodeToString(a.Data)
 }
 
 func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {

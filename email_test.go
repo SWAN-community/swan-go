@@ -24,14 +24,21 @@ import (
 )
 
 func TestEmail(t *testing.T) {
+	const testEmail = "email@example.com"
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new email.
-	e, err := NewEmail(s, "email@example.com")
+	e, err := NewEmail(s, testEmail)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	t.Run("printable", func(t *testing.T) {
+		v := e.AsPrintable()
+		if v != testEmail {
+			t.Fatal()
+		}
+	})
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the email and check that they pass.

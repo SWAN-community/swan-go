@@ -30,6 +30,10 @@ type Email struct {
 	Email string `json:"email"`
 }
 
+func (e *Email) AsPrintable() string {
+	return e.Email
+}
+
 func NewEmail(s *owid.Signer, email string) (*Email, error) {
 	var err error
 	e := &Email{Email: email}
