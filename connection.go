@@ -96,7 +96,7 @@ type Update struct {
 	RID   *Identifier  // Random [browser] Id - see CreateRID
 	Pref  *Preferences // Preference for marketing - see CreatePreferences
 	Email *Email       // Email address - see CreateEmail
-	Salt  *ByteArray   // Salt for SID - see CreateByteArray
+	Salt  *Salt        // Salt for SID - see CreateSalt
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
