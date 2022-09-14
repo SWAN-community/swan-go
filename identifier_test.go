@@ -46,7 +46,7 @@ func TestIdentifier(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the identifier and check that they pass.
-		verifyBase(t, s, &i.Base, true)
+		verifyOWID(t, s, i.GetOWID(), true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -63,7 +63,7 @@ func TestIdentifier(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -75,13 +75,14 @@ func TestIdentifier(t *testing.T) {
 		t.Log(string(j))
 
 		// Create a new instance of the identifier from the JSON.
-		n, err := IdentifierFromJson(j)
+		var n Identifier
+		err = json.Unmarshal(j, &n)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -99,7 +100,7 @@ func TestIdentifier(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -124,7 +125,7 @@ func TestIdentifier(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v1.Base, true)
+		verifyOWID(t, s, v1.GetOWID(), true)
 
 		// Verify that the data is correct when passed out to a field.
 		var v2 Identifier
@@ -132,13 +133,13 @@ func TestIdentifier(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v2.Base, true)
+		verifyOWID(t, s, v2.GetOWID(), true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the identifier and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		i.IdType += " "
-		verifyBase(t, s, &i.Base, false)
+		verifyOWID(t, s, i.GetOWID(), false)
 	})
 }

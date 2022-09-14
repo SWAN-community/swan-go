@@ -25,9 +25,10 @@ import (
 
 func TestBid(t *testing.T) {
 	s := owid.NewTestDefaultSigner(t)
+	d := createSeedTest(t, s)
 
 	// Create the new bid.
-	i, err := NewBid(s, "https://media.com", "https://advertiser.com")
+	i, err := NewBid(s, d, "https://media.com", "https://advertiser.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +36,7 @@ func TestBid(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the bid and check that they pass.
-		verifyBase(t, s, &i.Base, true)
+		verifyOWID(t, s, i.GetOWID(), true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -50,9 +51,10 @@ func TestBid(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -64,13 +66,15 @@ func TestBid(t *testing.T) {
 		t.Log(string(j))
 
 		// Create a new instance of the bid from the JSON.
-		n, err := BidFromJson(j)
+		var n Bid
+		err = json.Unmarshal(j, &n)
 		if err != nil {
 			t.Fatal(err)
 		}
+		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -86,36 +90,16 @@ func TestBid(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
-	})
-	t.Run("response", func(t *testing.T) {
-
-		// Get a JSON representation.
-		j, err := json.Marshal(i)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Unmarshall it as an unknown response type.
-		i, err := ResponseFromJSON(j)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Check the type.
-		if n, ok := i.(*Bid); ok {
-			verifyBase(t, s, &n.Base, true)
-		} else {
-			t.Fatal(err)
-		}
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the bid and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		i.MediaURL = "https://different"
-		verifyBase(t, s, &i.Base, false)
+		verifyOWID(t, s, i.GetOWID(), false)
 	})
 }

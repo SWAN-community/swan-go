@@ -31,7 +31,7 @@ func TestSID(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the SID and check that they pass.
-		verifyBase(t, s, &d.Base, true)
+		verifyOWID(t, s, d.GetOWID(), true)
 	})
 	t.Run("same", func(t *testing.T) {
 

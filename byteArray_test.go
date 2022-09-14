@@ -43,7 +43,7 @@ func TestByteArray(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the byte array and check that they pass.
-		verifyBase(t, s, &a.Base, true)
+		verifyOWID(t, s, a.GetOWID(), true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -60,7 +60,7 @@ func TestByteArray(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -72,13 +72,14 @@ func TestByteArray(t *testing.T) {
 		t.Log(string(j))
 
 		// Create a new instance of the byte array from the JSON.
-		n, err := ByteArrayFromJson(j)
+		var n ByteArray
+		err = json.Unmarshal(j, &n)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -96,7 +97,7 @@ func TestByteArray(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -121,7 +122,7 @@ func TestByteArray(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v1.Base, true)
+		verifyOWID(t, s, v1.GetOWID(), true)
 
 		// Verify that the data is correct when passed out to a field.
 		var v2 ByteArray
@@ -129,13 +130,13 @@ func TestByteArray(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v2.Base, true)
+		verifyOWID(t, s, v2.GetOWID(), true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the byte array and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		a.Data = []byte{4, 3, 2, 1}
-		verifyBase(t, s, &a.Base, false)
+		verifyOWID(t, s, a.GetOWID(), false)
 	})
 }

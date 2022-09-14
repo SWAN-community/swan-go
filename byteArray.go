@@ -19,7 +19,6 @@ package swan
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -29,6 +28,13 @@ import (
 type ByteArray struct {
 	Base
 	Data []byte `json:"data"`
+}
+
+func (a *ByteArray) GetOWID() *owid.OWID {
+	if a.OWID.Target == nil {
+		a.OWID.Target = a
+	}
+	return a.OWID
 }
 
 func (a *ByteArray) AsPrintable() string {
@@ -44,16 +50,6 @@ func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {
 		return nil, err
 	}
 	return a, nil
-}
-
-func ByteArrayFromJson(j []byte) (*ByteArray, error) {
-	var a ByteArray
-	err := json.Unmarshal(j, &a)
-	if err != nil {
-		return nil, err
-	}
-	a.OWID.Target = &a
-	return &a, nil
 }
 
 func ByteArrayUnmarshalBase64(value []byte) (*ByteArray, error) {

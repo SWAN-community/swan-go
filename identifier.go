@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -32,6 +31,13 @@ type Identifier struct {
 	IdType    string    `json:"type"`  // Type of identifier
 	Value     uuid.UUID `json:"value"` // In practice the value is a UUID so store it as one
 	Persisted bool      // True if the value has been stored.
+}
+
+func (i *Identifier) GetOWID() *owid.OWID {
+	if i.OWID.Target == nil {
+		i.OWID.Target = i
+	}
+	return i.OWID
 }
 
 func (i *Identifier) AsPrintable() string {
@@ -52,22 +58,13 @@ func NewIdentifier(
 	return i, nil
 }
 
-func IdentifierFromJson(j []byte) (*Identifier, error) {
-	var i Identifier
-	err := json.Unmarshal(j, &i)
-	if err != nil {
-		return nil, err
-	}
-	i.OWID.Target = &i
-	return &i, nil
-}
-
 func IdentifierUnmarshalBase64(value []byte) (*Identifier, error) {
 	var i Identifier
 	err := i.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
+	i.OWID.Target = &i
 	return &i, nil
 }
 

@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -29,6 +28,13 @@ import (
 type Salt struct {
 	Base
 	Salt []byte `json:"salt"`
+}
+
+func (s *Salt) GetOWID() *owid.OWID {
+	if s.OWID.Target == nil {
+		s.OWID.Target = s
+	}
+	return s.OWID
 }
 
 func (s *Salt) AsPrintable() string {
@@ -50,22 +56,13 @@ func NewSalt(s *owid.Signer, data []byte) (*Salt, error) {
 	return a, nil
 }
 
-func SaltFromJson(j []byte) (*Salt, error) {
-	var a Salt
-	err := json.Unmarshal(j, &a)
-	if err != nil {
-		return nil, err
-	}
-	a.OWID.Target = &a
-	return &a, nil
-}
-
 func SaltUnmarshalBase64(value []byte) (*Salt, error) {
 	var a Salt
 	err := a.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
+	a.OWID.Target = &a
 	return &a, nil
 }
 

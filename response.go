@@ -19,7 +19,6 @@ package swan
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/SWAN-community/common-go"
@@ -37,7 +36,8 @@ const (
 // Response from an OpenRTB transation.
 type Response struct {
 	Base
-	StructType byte `json:"type"` // The type of structure the response relates to
+	StructType byte  `json:"type"` // The type of structure the response relates to
+	Seed       *Seed `json:"-"`    // The seed for the transmission
 }
 
 // writeData writes the base and type before calling the function.
@@ -64,10 +64,18 @@ func (r *Response) marshalBase64(f func(*bytes.Buffer) error) ([]byte, error) {
 	return []byte(base64.StdEncoding.EncodeToString(s)), nil
 }
 
-// marshalOwid returns a byte array of all the data needed by an OWID.
+// marshalOwid returns a byte array of all the data that forms the response
+// instance AND the the seed.
 func (r *Response) marshalOwid(f func(*bytes.Buffer) error) ([]byte, error) {
 	var u bytes.Buffer
 	err := r.writeData(&u, f)
+	if err != nil {
+		return nil, err
+	}
+	if r.Seed == nil {
+		return nil, fmt.Errorf("missing seed")
+	}
+	err = common.WriteMarshaller(&u, r.Seed)
 	if err != nil {
 		return nil, err
 	}
@@ -110,38 +118,4 @@ func (r *Response) unmarshalBinary(
 		}
 		return nil
 	})
-}
-
-// ResponseFromJSON returns an instance of Bid, Failed, or Empty for the JSON
-// provided, or an error if the JSON can not be unmarshalled to a response.
-func ResponseFromJSON(j []byte) (interface{}, error) {
-	var r Response
-	err := json.Unmarshal(j, &r)
-	if err != nil {
-		return nil, err
-	}
-	var i interface{ owid.Marshaler }
-	var b *Base
-	switch r.StructType {
-	case responseBid:
-		var n Bid
-		b = &n.Base
-		i = &n
-	case responseEmpty:
-		var n Empty
-		b = &n.Base
-		i = &n
-	case responseFailed:
-		var n Failed
-		b = &n.Base
-		i = &n
-	default:
-		return nil, fmt.Errorf("type '%d' unknown", r.StructType)
-	}
-	json.Unmarshal(j, i)
-	if err != nil {
-		return nil, err
-	}
-	b.OWID.Target = i
-	return i, nil
 }

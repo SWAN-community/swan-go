@@ -42,7 +42,7 @@ func TestEmail(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the email and check that they pass.
-		verifyBase(t, s, &e.Base, true)
+		verifyOWID(t, s, e.GetOWID(), true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -59,7 +59,7 @@ func TestEmail(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -71,13 +71,14 @@ func TestEmail(t *testing.T) {
 		t.Log(string(j))
 
 		// Create a new instance of the email from the JSON.
-		n, err := EmailFromJson(j)
+		var n Email
+		err = json.Unmarshal(j, &n)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -95,7 +96,7 @@ func TestEmail(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
+		verifyOWID(t, s, n.GetOWID(), true)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -120,7 +121,7 @@ func TestEmail(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v1.Base, true)
+		verifyOWID(t, s, v1.GetOWID(), true)
 
 		// Verify that the data is correct when passed out to a field.
 		var v2 Email
@@ -128,13 +129,13 @@ func TestEmail(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v2.Base, true)
+		verifyOWID(t, s, v2.GetOWID(), true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the email and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		e.Email = "different@test.com"
-		verifyBase(t, s, &e.Base, false)
+		verifyOWID(t, s, e.GetOWID(), false)
 	})
 }

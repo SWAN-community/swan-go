@@ -26,7 +26,76 @@ import (
 
 func TestSeed(t *testing.T) {
 	s := owid.NewTestDefaultSigner(t)
+	d := createSeedTest(t, s)
+	t.Run("pass", func(t *testing.T) {
 
+		// Verify the seed and check that they pass.
+		verifyOWID(t, s, d.GetOWID(), true)
+	})
+	t.Run("base64", func(t *testing.T) {
+
+		// Get a base64 string representation of the seed.
+		b, err := d.MarshalBase64()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create a new instance of the seed from the base64 string.
+		n, err := SeedUnmarshalBase64(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, n.GetOWID(), true)
+	})
+	t.Run("json", func(t *testing.T) {
+
+		// Get a JSON representation of the seed.
+		j, err := json.Marshal(d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(string(j))
+
+		// Create a new instance of the seed from the JSON.
+		var n Seed
+		err = json.Unmarshal(j, &n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, n.GetOWID(), true)
+	})
+	t.Run("binary", func(t *testing.T) {
+
+		// Get a binary representation of the seed.
+		b, err := d.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create a new instance of the seed from the binary.
+		var n Seed
+		err = n.UnmarshalBinary(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, n.GetOWID(), true)
+	})
+	t.Run("fail", func(t *testing.T) {
+
+		// Change the seed and then verify them to confirm that they
+		// do not pass verification now the target data has changed.
+		d.PubDomain = "different.com"
+		verifyOWID(t, s, d.GetOWID(), false)
+	})
+}
+
+func createSeedTest(t *testing.T, s *owid.Signer) *Seed {
 	// Create the new seed.
 	d, err := NewSeed()
 	if err != nil {
@@ -64,69 +133,5 @@ func TestSeed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("pass", func(t *testing.T) {
-
-		// Verify the seed and check that they pass.
-		verifyBase(t, s, &d.Base, true)
-	})
-	t.Run("base64", func(t *testing.T) {
-
-		// Get a base64 string representation of the seed.
-		b, err := d.MarshalBase64()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new instance of the seed from the base64 string.
-		n, err := SeedUnmarshalBase64(b)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
-	})
-	t.Run("json", func(t *testing.T) {
-
-		// Get a JSON representation of the seed.
-		j, err := json.Marshal(d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Log(string(j))
-
-		// Create a new instance of the seed from the JSON.
-		n, err := SeedFromJson(j)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
-	})
-	t.Run("binary", func(t *testing.T) {
-
-		// Get a binary representation of the seed.
-		b, err := d.MarshalBinary()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new instance of the seed from the binary.
-		var n Seed
-		err = n.UnmarshalBinary(b)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Verify the new instance with the signer.
-		verifyBase(t, s, &n.Base, true)
-	})
-	t.Run("fail", func(t *testing.T) {
-
-		// Change the seed and then verify them to confirm that they
-		// do not pass verification now the target data has changed.
-		d.PubDomain = "different.com"
-		verifyBase(t, s, &d.Base, false)
-	})
+	return d
 }

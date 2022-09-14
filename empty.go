@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/SWAN-community/owid-go"
@@ -30,58 +29,57 @@ type Empty struct {
 	Response
 }
 
-func NewEmpty(s *owid.Signer) (*Empty, error) {
-	var err error
-	a := &Empty{}
-	a.Version = swanVersion
-	a.StructType = responseEmpty
-	a.OWID, err = s.CreateOWIDandSign(a)
-	if err != nil {
-		return nil, err
+func (e *Empty) GetOWID() *owid.OWID {
+	if e.OWID.Target == nil {
+		e.OWID.Target = e
 	}
-	return a, nil
+	return e.OWID
 }
 
-func EmptyFromJson(j []byte) (*Empty, error) {
-	var a Empty
-	err := json.Unmarshal(j, &a)
+func NewEmpty(signer *owid.Signer, seed *Seed) (*Empty, error) {
+	var err error
+	e := &Empty{}
+	e.Version = swanVersion
+	e.StructType = responseEmpty
+	e.Seed = seed
+	e.OWID, err = signer.CreateOWIDandSign(e)
 	if err != nil {
 		return nil, err
 	}
-	a.OWID.Target = &a
-	return &a, nil
+	return e, nil
 }
 
 func EmptyUnmarshalBase64(value []byte) (*Empty, error) {
-	var a Empty
-	err := unmarshalBase64(&a, value)
+	var e Empty
+	err := unmarshalBase64(&e, value)
 	if err != nil {
 		return nil, err
 	}
-	return &a, nil
+	e.OWID.Target = &e
+	return &e, nil
 }
 
-func (a *Empty) MarshalBase64() ([]byte, error) {
-	return a.marshalBase64(a.marshal)
+func (e *Empty) MarshalBase64() ([]byte, error) {
+	return e.marshalBase64(e.marshal)
 }
 
-func (a *Empty) MarshalOwid() ([]byte, error) {
-	return a.marshalOwid(a.marshal)
+func (e *Empty) MarshalOwid() ([]byte, error) {
+	return e.marshalOwid(e.marshal)
 }
 
-func (a *Empty) MarshalBinary() ([]byte, error) {
-	return a.marshalBinary(a.marshal)
+func (e *Empty) MarshalBinary() ([]byte, error) {
+	return e.marshalBinary(e.marshal)
 }
 
-func (a *Empty) marshal(b *bytes.Buffer) error {
-	return nil
-}
-
-func (a *Empty) UnmarshalBinary(data []byte) error {
-	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
-		if a.StructType != responseEmpty {
+func (e *Empty) UnmarshalBinary(data []byte) error {
+	return e.unmarshalBinary(e, data, func(b *bytes.Buffer) error {
+		if e.StructType != responseEmpty {
 			return fmt.Errorf("struct type not failed '%d'", responseEmpty)
 		}
 		return nil
 	})
+}
+
+func (e *Empty) marshal(b *bytes.Buffer) error {
+	return nil
 }

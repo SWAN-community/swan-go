@@ -31,6 +31,13 @@ type Preferences struct {
 	Data PreferencesData `json:"data"`
 }
 
+func (p *Preferences) GetOWID() *owid.OWID {
+	if p.OWID.Target == nil {
+		p.OWID.Target = p
+	}
+	return p.OWID
+}
+
 func (p *Preferences) AsPrintable() string {
 	b, err := json.Marshal(p.Data)
 	if err != nil {
@@ -50,22 +57,13 @@ func NewPreferences(s *owid.Signer, personalizedMarketing bool) (*Preferences, e
 	return p, nil
 }
 
-func PreferencesFromJson(j []byte) (*Preferences, error) {
-	var p Preferences
-	err := json.Unmarshal(j, &p)
-	if err != nil {
-		return nil, err
-	}
-	p.OWID.Target = &p
-	return &p, nil
-}
-
 func PreferencesUnmarshalBase64(value []byte) (*Preferences, error) {
 	var p Preferences
 	err := p.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
+	p.OWID.Target = &p
 	return &p, nil
 }
 

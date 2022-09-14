@@ -22,11 +22,8 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
-func verifyBase(t *testing.T, s *owid.Signer, i *Base, expected bool) {
-	r, err := s.Verify(i.OWID)
-	if err != nil {
-		t.Fatal(err)
-	}
+func verifyOWID(t *testing.T, s *owid.Signer, o *owid.OWID, expected bool) {
+	r, _ := s.Verify(o)
 	if r != expected {
 		t.Fatalf("Expected '%t', got '%t'", expected, r)
 	}

@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/SWAN-community/common-go"
@@ -32,26 +31,28 @@ type Bid struct {
 	AdvertiserURL string `json:"advertiserURL"` // The URL to direct the browser to if the advert is selected
 }
 
-func NewBid(s *owid.Signer, mediaUrl string, advertiserUrl string) (*Bid, error) {
+func (b *Bid) GetOWID() *owid.OWID {
+	if b.OWID.Target == nil {
+		b.OWID.Target = b
+	}
+	return b.OWID
+}
+
+func NewBid(
+	signer *owid.Signer,
+	seed *Seed,
+	mediaUrl string,
+	advertiserUrl string) (*Bid, error) {
 	var err error
 	a := &Bid{MediaURL: mediaUrl, AdvertiserURL: advertiserUrl}
 	a.Version = swanVersion
 	a.StructType = responseBid
-	a.OWID, err = s.CreateOWIDandSign(a)
+	a.Seed = seed
+	a.OWID, err = signer.CreateOWIDandSign(a)
 	if err != nil {
 		return nil, err
 	}
 	return a, nil
-}
-
-func BidFromJson(j []byte) (*Bid, error) {
-	var a Bid
-	err := json.Unmarshal(j, &a)
-	if err != nil {
-		return nil, err
-	}
-	a.OWID.Target = &a
-	return &a, nil
 }
 
 func BidUnmarshalBase64(value []byte) (*Bid, error) {
@@ -60,6 +61,7 @@ func BidUnmarshalBase64(value []byte) (*Bid, error) {
 	if err != nil {
 		return nil, err
 	}
+	a.OWID.Target = &a
 	return &a, nil
 }
 

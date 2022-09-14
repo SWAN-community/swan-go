@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/SWAN-community/common-go"
@@ -33,26 +32,28 @@ type Failed struct {
 	Error string `json:"error"` // The error message to add to the tree.
 }
 
-func NewFailed(s *owid.Signer, host string, message string) (*Failed, error) {
+func (f *Failed) GetOWID() *owid.OWID {
+	if f.OWID.Target == nil {
+		f.OWID.Target = f
+	}
+	return f.OWID
+}
+
+func NewFailed(
+	signer *owid.Signer,
+	seed *Seed,
+	host string,
+	message string) (*Failed, error) {
 	var err error
 	f := &Failed{Host: host, Error: message}
 	f.Version = swanVersion
 	f.StructType = responseFailed
-	f.OWID, err = s.CreateOWIDandSign(f)
+	f.Seed = seed
+	f.OWID, err = signer.CreateOWIDandSign(f)
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
-}
-
-func FailedFromJson(j []byte) (*Failed, error) {
-	var a Failed
-	err := json.Unmarshal(j, &a)
-	if err != nil {
-		return nil, err
-	}
-	a.OWID.Target = &a
-	return &a, nil
 }
 
 func FailedUnmarshalBase64(value []byte) (*Failed, error) {
@@ -61,6 +62,7 @@ func FailedUnmarshalBase64(value []byte) (*Failed, error) {
 	if err != nil {
 		return nil, err
 	}
+	a.OWID.Target = &a
 	return &a, nil
 }
 

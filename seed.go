@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 	"strings"
 
 	"github.com/SWAN-community/common-go"
@@ -39,6 +38,13 @@ type Seed struct {
 	Stopped     []string     `json:"stopped"`     // List of domains or advert IDs that should not be shown
 }
 
+func (s *Seed) GetOWID() *owid.OWID {
+	if s.OWID.Target == nil {
+		s.OWID.Target = s
+	}
+	return s.OWID
+}
+
 // Returns a new swan.Seed with the correct version and a random uuid ready to
 // have the other values added and then signed.
 func NewSeed() (*Seed, error) {
@@ -48,22 +54,13 @@ func NewSeed() (*Seed, error) {
 	}, nil
 }
 
-func SeedFromJson(j []byte) (*Seed, error) {
-	var s Seed
-	err := json.Unmarshal(j, &s)
-	if err != nil {
-		return nil, err
-	}
-	s.OWID.Target = &s
-	return &s, nil
-}
-
 func SeedUnmarshalBase64(value []byte) (*Seed, error) {
 	var s Seed
 	err := unmarshalBase64(&s, value)
 	if err != nil {
 		return nil, err
 	}
+	s.OWID.Target = &s
 	return &s, nil
 }
 

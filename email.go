@@ -18,7 +18,6 @@ package swan
 
 import (
 	"bytes"
-	"encoding/json"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -28,6 +27,13 @@ import (
 type Email struct {
 	Base
 	Email string `json:"email"`
+}
+
+func (e *Email) GetOWID() *owid.OWID {
+	if e.OWID.Target == nil {
+		e.OWID.Target = e
+	}
+	return e.OWID
 }
 
 func (e *Email) AsPrintable() string {
@@ -45,22 +51,13 @@ func NewEmail(s *owid.Signer, email string) (*Email, error) {
 	return e, nil
 }
 
-func EmailFromJson(j []byte) (*Email, error) {
-	var e Email
-	err := json.Unmarshal(j, &e)
-	if err != nil {
-		return nil, err
-	}
-	e.OWID.Target = &e
-	return &e, nil
-}
-
 func EmailUnmarshalBase64(value []byte) (*Email, error) {
 	var e Email
 	err := e.UnmarshalBase64(value)
 	if err != nil {
 		return nil, err
 	}
+	e.OWID.Target = &e
 	return &e, nil
 }
 
