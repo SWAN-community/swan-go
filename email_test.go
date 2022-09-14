@@ -108,12 +108,20 @@ func TestEmail(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Verify that the type is correct.
-		v, err := EmailUnmarshalBase64([]byte(n.Value))
+		// Verify that the data is correct when passed to the new method.
+		v1, err := EmailUnmarshalBase64([]byte(n.Value))
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v.Base, true)
+		verifyBase(t, s, &v1.Base, true)
+
+		// Verify that the data is correct when passed out to a field.
+		var v2 Email
+		err = p.UnmarshalBase64(&v2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		verifyBase(t, s, &v2.Base, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 

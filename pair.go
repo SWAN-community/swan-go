@@ -77,6 +77,13 @@ func (p *Pair) AsCookie(host string, secure bool) (*http.Cookie, error) {
 		Expires: p.Expires}, nil
 }
 
+// UnmarshalBase64 the value string into the instance of field provided. Will
+// fail if the value is either not base 64 or not of the same type as the field
+// instance provided.
+func (p *Pair) UnmarshalBase64(field Field) error {
+	return field.UnmarshalBase64([]byte(p.Value))
+}
+
 // Remove any port information that may be included in the host as this is not
 // used by cookies.
 func getDomain(h string) string {

@@ -109,11 +109,19 @@ func TestByteArray(t *testing.T) {
 		}
 
 		// Verify that the type is correct.
-		v, err := ByteArrayUnmarshalBase64([]byte(n.Value))
+		v1, err := ByteArrayUnmarshalBase64([]byte(n.Value))
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyBase(t, s, &v.Base, true)
+		verifyBase(t, s, &v1.Base, true)
+
+		// Verify that the data is correct when passed out to a field.
+		var v2 ByteArray
+		err = p.UnmarshalBase64(&v2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		verifyBase(t, s, &v2.Base, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
