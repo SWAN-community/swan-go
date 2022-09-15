@@ -122,7 +122,7 @@ func (r *Response) unmarshalBinary(
 // ResponseFromByteArray turns the byte array into an instance of a structure
 // that includes swan.Response. Either Bid, Failed, or Empty.
 // Intended to be used to pass individual responses as string parameters.
-func ResponseFromByteArray(data []byte) (interface{}, error) {
+func ResponseFromByteArray(data []byte) (Signed, error) {
 	var r Response
 	err := r.UnmarshalBinary(data)
 	if err != nil {
@@ -134,7 +134,7 @@ func ResponseFromByteArray(data []byte) (interface{}, error) {
 // ResponseFromBase64 turns the base64 string into an instance of a structure
 // that includes swan.Response. Either Bid, Failed, or Empty.
 // Intended to be used to pass individual responses as string parameters.
-func ResponseFromBase64(data []byte) (interface{}, error) {
+func ResponseFromBase64(data []byte) (Signed, error) {
 	b, err := base64.StdEncoding.DecodeString(string(data))
 	if err != nil {
 		return nil, err
@@ -159,9 +159,9 @@ func (r *Response) UnmarshalBinary(data []byte) error {
 }
 
 // UnmarshalBinaryToType
-func (r *Response) UnmarshalBinaryToType(data []byte) (interface{}, error) {
+func (r *Response) UnmarshalBinaryToType(data []byte) (Signed, error) {
 	var err error
-	var i interface{}
+	var i Signed
 	switch r.StructType {
 	case responseBid:
 		var b Bid
