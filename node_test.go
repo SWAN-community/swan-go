@@ -51,11 +51,11 @@ func TestNode(t *testing.T) {
 		}
 
 		// Verify that it fails when there is no seed.
-		verifyOWID(t, s, c.Empty.GetOWID(), false)
+		verifyOWID(t, s, c.Empty, false)
 
 		// Verify when the seed is added to the response.
 		c.Empty.Seed = d
-		verifyOWID(t, s, c.Empty.GetOWID(), true)
+		verifyOWID(t, s, c.Empty, true)
 	})
 	t.Run("failed", func(t *testing.T) {
 
@@ -81,11 +81,11 @@ func TestNode(t *testing.T) {
 		}
 
 		// Verify that it fails when there is no seed.
-		verifyOWID(t, s, c.Failed.GetOWID(), false)
+		verifyOWID(t, s, c.Failed, false)
 
 		// Verify when the seed is added to the response.
 		c.Failed.Seed = d
-		verifyOWID(t, s, c.Failed.GetOWID(), true)
+		verifyOWID(t, s, c.Failed, true)
 	})
 	t.Run("bid", func(t *testing.T) {
 
@@ -111,11 +111,11 @@ func TestNode(t *testing.T) {
 		}
 
 		// Verify that it fails when there is no seed.
-		verifyOWID(t, s, c.Bid.GetOWID(), false)
+		verifyOWID(t, s, c.Bid, false)
 
 		// Verify when the seed is added to the response.
 		c.Bid.Seed = d
-		verifyOWID(t, s, c.Bid.GetOWID(), true)
+		verifyOWID(t, s, c.Bid, true)
 	})
 	t.Run("tree", func(t *testing.T) {
 
@@ -162,19 +162,19 @@ func TestNode(t *testing.T) {
 			t.Fatal("root bid should be nil")
 		}
 		c.Empty.Seed = d
-		verifyOWID(t, s, c.Empty.GetOWID(), true)
+		verifyOWID(t, s, c.Empty, true)
 
 		// Verify the children with the seed.
 		for _, i := range c.Children {
 			if i.Bid != nil {
 				i.Bid.Seed = d
-				verifyOWID(t, s, i.Bid.GetOWID(), true)
+				verifyOWID(t, s, i.Bid, true)
 			} else if i.Failed != nil {
 				i.Failed.Seed = d
-				verifyOWID(t, s, i.Failed.GetOWID(), true)
+				verifyOWID(t, s, i.Failed, true)
 			} else if i.Empty != nil {
 				i.Empty.Seed = d
-				verifyOWID(t, s, i.Empty.GetOWID(), true)
+				verifyOWID(t, s, i.Empty, true)
 			} else {
 				t.Fatal("child has no value")
 			}

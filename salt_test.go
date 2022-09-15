@@ -42,7 +42,7 @@ func TestSalt(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the salt and check that they pass.
-		verifyOWID(t, s, a.GetOWID(), true)
+		verifyOWID(t, s, a, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -59,7 +59,7 @@ func TestSalt(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, n, true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -78,7 +78,7 @@ func TestSalt(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -96,7 +96,7 @@ func TestSalt(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -121,13 +121,13 @@ func TestSalt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyOWID(t, s, v.GetOWID(), true)
+		verifyOWID(t, s, v, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the salt and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		a.Salt = []byte{2}
-		verifyOWID(t, s, a.GetOWID(), false)
+		verifyOWID(t, s, a, false)
 	})
 }

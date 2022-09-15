@@ -67,31 +67,19 @@ func FailedUnmarshalBase64(value []byte) (*Failed, error) {
 }
 
 func (f *Failed) MarshalBase64() ([]byte, error) {
-	return f.marshalBase64(f.marshal)
+	return f.Response.marshalBase64(f.marshal)
 }
 
 func (f *Failed) MarshalOwid() ([]byte, error) {
-	return f.marshalOwid(f.marshal)
+	return f.Response.marshalOwid(f.marshal)
 }
 
 func (f *Failed) MarshalBinary() ([]byte, error) {
-	return f.marshalBinary(f.marshal)
-}
-
-func (f *Failed) marshal(b *bytes.Buffer) error {
-	err := common.WriteString(b, f.Host)
-	if err != nil {
-		return err
-	}
-	err = common.WriteString(b, f.Error)
-	if err != nil {
-		return err
-	}
-	return nil
+	return f.Response.marshalBinary(f.marshal)
 }
 
 func (f *Failed) UnmarshalBinary(data []byte) error {
-	return f.unmarshalBinary(f, data, func(b *bytes.Buffer) error {
+	return f.Response.unmarshalBinary(f, data, func(b *bytes.Buffer) error {
 		var err error
 		if f.StructType != responseFailed {
 			return fmt.Errorf("struct type not failed '%d'", responseFailed)
@@ -106,4 +94,16 @@ func (f *Failed) UnmarshalBinary(data []byte) error {
 		}
 		return nil
 	})
+}
+
+func (f *Failed) marshal(b *bytes.Buffer) error {
+	err := common.WriteString(b, f.Host)
+	if err != nil {
+		return err
+	}
+	err = common.WriteString(b, f.Error)
+	if err != nil {
+		return err
+	}
+	return nil
 }

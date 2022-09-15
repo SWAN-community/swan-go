@@ -30,7 +30,7 @@ func TestSeed(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the seed and check that they pass.
-		verifyOWID(t, s, d.GetOWID(), true)
+		verifyOWID(t, s, d, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -47,7 +47,7 @@ func TestSeed(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, n, true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -66,7 +66,7 @@ func TestSeed(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -84,14 +84,14 @@ func TestSeed(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the seed and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		d.PubDomain = "different.com"
-		verifyOWID(t, s, d.GetOWID(), false)
+		verifyOWID(t, s, d, false)
 	})
 }
 

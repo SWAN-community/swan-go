@@ -66,31 +66,19 @@ func BidUnmarshalBase64(value []byte) (*Bid, error) {
 }
 
 func (a *Bid) MarshalBase64() ([]byte, error) {
-	return a.marshalBase64(a.marshal)
+	return a.Response.marshalBase64(a.marshal)
 }
 
 func (a *Bid) MarshalOwid() ([]byte, error) {
-	return a.marshalOwid(a.marshal)
+	return a.Response.marshalOwid(a.marshal)
 }
 
 func (a *Bid) MarshalBinary() ([]byte, error) {
-	return a.marshalBinary(a.marshal)
-}
-
-func (a *Bid) marshal(b *bytes.Buffer) error {
-	err := common.WriteString(b, a.MediaURL)
-	if err != nil {
-		return err
-	}
-	err = common.WriteString(b, a.AdvertiserURL)
-	if err != nil {
-		return err
-	}
-	return nil
+	return a.Response.marshalBinary(a.marshal)
 }
 
 func (a *Bid) UnmarshalBinary(data []byte) error {
-	return a.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
+	return a.Response.unmarshalBinary(a, data, func(b *bytes.Buffer) error {
 		var err error
 		if a.StructType != responseBid {
 			return fmt.Errorf(
@@ -108,4 +96,16 @@ func (a *Bid) UnmarshalBinary(data []byte) error {
 		}
 		return nil
 	})
+}
+
+func (a *Bid) marshal(b *bytes.Buffer) error {
+	err := common.WriteString(b, a.MediaURL)
+	if err != nil {
+		return err
+	}
+	err = common.WriteString(b, a.AdvertiserURL)
+	if err != nil {
+		return err
+	}
+	return nil
 }

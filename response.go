@@ -28,7 +28,6 @@ import (
 // First byte of the data structure will be the type of response.
 const (
 	responseBid byte = iota + 1
-	responseID
 	responseFailed
 	responseEmpty
 )
@@ -118,4 +117,72 @@ func (r *Response) unmarshalBinary(
 		}
 		return nil
 	})
+}
+
+// ResponseFromByteArray turns the byte array into an instance of a structure
+// that includes swan.Response. Either Bid, Failed, or Empty.
+// Intended to be used to pass individual responses as string parameters.
+func ResponseFromByteArray(data []byte) (interface{}, error) {
+	var r Response
+	err := r.UnmarshalBinary(data)
+	if err != nil {
+		return nil, err
+	}
+	return r.UnmarshalBinaryToType(data)
+}
+
+// ResponseFromBase64 turns the base64 string into an instance of a structure
+// that includes swan.Response. Either Bid, Failed, or Empty.
+// Intended to be used to pass individual responses as string parameters.
+func ResponseFromBase64(data []byte) (interface{}, error) {
+	b, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return nil, err
+	}
+	return ResponseFromByteArray(b)
+}
+
+// UnmarshalBinary reads the response version and structure type and ignores
+// the rest of the data. Used to determine the type of response.
+func (r *Response) UnmarshalBinary(data []byte) error {
+	var err error
+	b := bytes.NewBuffer(data)
+	r.Version, err = common.ReadByte(b)
+	if err != nil {
+		return err
+	}
+	r.StructType, err = common.ReadByte(b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UnmarshalBinaryToType
+func (r *Response) UnmarshalBinaryToType(data []byte) (interface{}, error) {
+	var err error
+	var i interface{}
+	switch r.StructType {
+	case responseBid:
+		var b Bid
+		err = b.UnmarshalBinary(data)
+		b.OWID.Target = &b
+		i = &b
+	case responseEmpty:
+		var e Empty
+		err = e.UnmarshalBinary(data)
+		e.OWID.Target = &e
+		i = &e
+	case responseFailed:
+		var f Failed
+		err = f.UnmarshalBinary(data)
+		f.OWID.Target = &f
+		i = &f
+	default:
+		return nil, fmt.Errorf("struct '%d' unknown", r.StructType)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
 }

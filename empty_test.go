@@ -36,7 +36,7 @@ func TestEmpty(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the empty and check that they pass.
-		verifyOWID(t, s, e.GetOWID(), true)
+		verifyOWID(t, s, e, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -54,7 +54,7 @@ func TestEmpty(t *testing.T) {
 		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, n, true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -74,7 +74,7 @@ func TestEmpty(t *testing.T) {
 		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -93,13 +93,35 @@ func TestEmpty(t *testing.T) {
 		n.Seed = d
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
+	})
+	t.Run("response", func(t *testing.T) {
+
+		// Get a base64 string representation of the bid.
+		b, err := e.MarshalBase64()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Use the method of response to work out the structure type.
+		a, err := ResponseFromBase64(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if n, ok := a.(*Empty); ok {
+			// Verify the new instance with the signer.
+			n.Seed = d
+			verifyOWID(t, s, n, true)
+		} else {
+			t.Fatal("bid invalid")
+		}
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the empty and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		e.StructType = 0
-		verifyOWID(t, s, e.GetOWID(), false)
+		verifyOWID(t, s, e, false)
 	})
 }

@@ -60,19 +60,19 @@ func EmptyUnmarshalBase64(value []byte) (*Empty, error) {
 }
 
 func (e *Empty) MarshalBase64() ([]byte, error) {
-	return e.marshalBase64(e.marshal)
+	return e.Response.marshalBase64(e.marshal)
 }
 
 func (e *Empty) MarshalOwid() ([]byte, error) {
-	return e.marshalOwid(e.marshal)
+	return e.Response.marshalOwid(e.marshal)
 }
 
 func (e *Empty) MarshalBinary() ([]byte, error) {
-	return e.marshalBinary(e.marshal)
+	return e.Response.marshalBinary(e.marshal)
 }
 
 func (e *Empty) UnmarshalBinary(data []byte) error {
-	return e.unmarshalBinary(e, data, func(b *bytes.Buffer) error {
+	return e.Response.unmarshalBinary(e, data, func(b *bytes.Buffer) error {
 		if e.StructType != responseEmpty {
 			return fmt.Errorf("struct type not failed '%d'", responseEmpty)
 		}

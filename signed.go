@@ -16,15 +16,12 @@
 
 package swan
 
-import (
-	"testing"
+import "github.com/SWAN-community/owid-go"
 
-	"github.com/SWAN-community/owid-go"
-)
+// Signed interface used to identify any types that can be verified.
+type Signed interface {
 
-func verifyOWID(t *testing.T, s *owid.Signer, o Signed, expected bool) {
-	r, _ := s.Verify(o.GetOWID())
-	if r != expected {
-		t.Fatalf("Expected '%t', got '%t'", expected, r)
-	}
+	// Returns the OWID associated with the instance. The returned OWID must
+	// have the Target field set to the instance being verified.
+	GetOWID() *owid.OWID
 }

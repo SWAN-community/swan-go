@@ -41,7 +41,7 @@ func TestPreferences(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 
 		// Verify the preferences and check that they pass.
-		verifyOWID(t, s, p.GetOWID(), true)
+		verifyOWID(t, s, p, true)
 	})
 	t.Run("base64", func(t *testing.T) {
 
@@ -58,7 +58,7 @@ func TestPreferences(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, n, true)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -77,7 +77,7 @@ func TestPreferences(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -95,7 +95,7 @@ func TestPreferences(t *testing.T) {
 		}
 
 		// Verify the new instance with the signer.
-		verifyOWID(t, s, n.GetOWID(), true)
+		verifyOWID(t, s, &n, true)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -120,7 +120,7 @@ func TestPreferences(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyOWID(t, s, v1.GetOWID(), true)
+		verifyOWID(t, s, v1, true)
 
 		// Verify that the data is correct when passed out to a field.
 		var v2 Preferences
@@ -128,13 +128,13 @@ func TestPreferences(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyOWID(t, s, v2.GetOWID(), true)
+		verifyOWID(t, s, &v2, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
 		// Change the preferences and then verify them to confirm that they
 		// do not pass verification now the target data has changed.
 		p.Data.UseBrowsingForPersonalization = false
-		verifyOWID(t, s, p.GetOWID(), false)
+		verifyOWID(t, s, p, false)
 	})
 }
