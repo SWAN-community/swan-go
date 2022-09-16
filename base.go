@@ -21,7 +21,6 @@ import (
 	"encoding"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -31,20 +30,6 @@ import (
 type Base struct {
 	Version byte       `json:"version"` // Used to indicate the version encoding of the type.
 	OWID    *owid.OWID `json:"source"`  // OWID related to the structure
-	Validity
-}
-
-// asHttpCookie returns the base instance as a cookie.
-// f is an instance of a structure that includes base and implements Field.
-func (b *Base) asHttpCookie(h string, s bool, f Field) (*http.Cookie, error) {
-	var err error
-	c := b.Validity.AsHttpCookie(h, s)
-	d, err := f.MarshalBase64()
-	if err != nil {
-		return nil, err
-	}
-	c.Value = string(d)
-	return c, nil
 }
 
 // writeData writes the version before calling the function.

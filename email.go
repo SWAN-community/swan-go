@@ -22,13 +22,14 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 // Email used to represent an email address.
 type Email struct {
 	Base
-	Email string `json:"email"`
-	Validity
+	Cookie *Cookie `json:"cookie,omitempty"`
+	Email  string  `json:"email"`
 }
 
 func (e *Email) GetOWID() *owid.OWID {
@@ -45,7 +46,10 @@ func (e *Email) AsPrintable() string {
 func (e *Email) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	return e.Base.asHttpCookie(host, secure, e)
+	if e.Cookie == nil {
+		e.Cookie = &Cookie{Created: e.GetOWID().TimeStamp}
+	}
+	return e.Cookie.asHttpCookie(host, secure, e)
 }
 
 func NewEmail(s *owid.Signer, email string) (*Email, error) {
@@ -67,6 +71,18 @@ func EmailUnmarshalBase64(value []byte) (*Email, error) {
 	}
 	e.OWID.Target = &e
 	return &e, nil
+}
+
+func (e *Email) UnmarshalSwift(p *swift.Pair) error {
+	if len(p.Values()) == 0 {
+		return nil
+	}
+	err := e.UnmarshalBase64(p.Values()[0])
+	if err != nil {
+		return err
+	}
+	e.Cookie = &Cookie{}
+	return e.Cookie.UnmarshalSwiftValidity(p)
 }
 
 func (e *Email) UnmarshalBase64(value []byte) error {

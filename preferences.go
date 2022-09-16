@@ -23,14 +23,15 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 // Preferences
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/preferences.md
 type Preferences struct {
 	Base
-	Data PreferencesData `json:"data"`
-	Validity
+	Cookie *Cookie         `json:"cookie,omitempty"`
+	Data   PreferencesData `json:"data"`
 }
 
 func (p *Preferences) GetOWID() *owid.OWID {
@@ -51,7 +52,10 @@ func (p *Preferences) AsPrintable() string {
 func (p *Preferences) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	return p.Base.asHttpCookie(host, secure, p)
+	if p.Cookie == nil {
+		p.Cookie = &Cookie{Created: p.GetOWID().TimeStamp}
+	}
+	return p.Cookie.asHttpCookie(host, secure, p)
 }
 
 func NewPreferences(
@@ -75,6 +79,18 @@ func PreferencesUnmarshalBase64(value []byte) (*Preferences, error) {
 	}
 	p.OWID.Target = &p
 	return &p, nil
+}
+
+func (f *Preferences) UnmarshalSwift(p *swift.Pair) error {
+	if len(p.Values()) == 0 {
+		return nil
+	}
+	err := f.UnmarshalBase64(p.Values()[0])
+	if err != nil {
+		return err
+	}
+	f.Cookie = &Cookie{}
+	return f.Cookie.UnmarshalSwiftValidity(p)
 }
 
 func (p *Preferences) UnmarshalBase64(value []byte) error {

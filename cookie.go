@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,32 +28,47 @@ import (
 // Prefix added to the key for any SWAN values stored by the caller as cookies.
 const cookiePrefix = "swan-"
 
-type Validity struct {
-	Key     string    `json:"key"`
-	Created time.Time `json:"created"`
-	Expires time.Time `json:"expires"`
+type Cookie struct {
+	Key     string    `json:"key,omitempty"`
+	Created time.Time `json:"created,omitempty"`
+	Expires time.Time `json:"expires,omitempty"`
 }
 
-func (v *Validity) UnmarshalSwiftValidity(p *swift.Pair) error {
-	v.Created = p.Created()
-	v.Expires = p.Expires()
+// asHttpCookie returns the validity instance as a cookie.
+// f is an instance of a structure that implements Field.
+func (c *Cookie) asHttpCookie(h string, s bool, f Field) (*http.Cookie, error) {
+	if c == nil {
+		return nil, fmt.Errorf("nil cookie")
+	}
+	b := c.AsHttpCookie(h, s)
+	d, err := f.MarshalBase64()
+	if err != nil {
+		return nil, err
+	}
+	b.Value = string(d)
+	return b, nil
+}
+
+func (c *Cookie) UnmarshalSwiftValidity(p *swift.Pair) error {
+	c.Created = p.Created()
+	c.Expires = p.Expires()
 	return nil
 }
 
 // CookieName name for any cookie associated with the SWAN pair.
-func (v *Validity) CookieName() string { return cookiePrefix + v.Key }
+func (c *Cookie) CookieName() string { return cookiePrefix + c.Key }
 
 // AsHttpCookie creates a HTTP cookie that needs to have the Value field set
 // to the base 64 data associated with the SWAN entity.
-func (p *Validity) AsHttpCookie(host string, secure bool) *http.Cookie {
+func (c *Cookie) AsHttpCookie(host string, secure bool) *http.Cookie {
 	return &http.Cookie{
-		Name:     p.CookieName(),
+		Name:     c.CookieName(),
 		Domain:   getDomain(host),      // Specifically to this domain
 		SameSite: http.SameSiteLaxMode, // Available to all paths
 		HttpOnly: false,
 		Secure:   secure, // Secure if HTTPs, otherwise false.
 		// Set the cookie expiry time to the same as the SWAN pair.
-		Expires: p.Expires}
+		Expires: c.Expires}
 }
 
 // Remove any port information that may be included in the host as this is not

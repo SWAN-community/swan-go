@@ -22,14 +22,15 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 // Salt used to store the integer used as salt when hashing the email address
 // to form the Signed in Id (SID).
 type Salt struct {
 	Base
-	Salt []byte `json:"salt"`
-	Validity
+	Cookie *Cookie `json:"cookie,omitempty"`
+	Salt   []byte  `json:"salt"`
 }
 
 func (s *Salt) GetOWID() *owid.OWID {
@@ -46,7 +47,10 @@ func (s *Salt) AsPrintable() string {
 func (s *Salt) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	return s.Base.asHttpCookie(host, secure, s)
+	if s.Cookie == nil {
+		s.Cookie = &Cookie{Created: s.GetOWID().TimeStamp}
+	}
+	return s.Cookie.asHttpCookie(host, secure, s)
 }
 
 func NewSaltFromString(s *owid.Signer, data string) (*Salt, error) {
@@ -72,6 +76,18 @@ func SaltUnmarshalBase64(value []byte) (*Salt, error) {
 	}
 	a.OWID.Target = &a
 	return &a, nil
+}
+
+func (s *Salt) UnmarshalSwift(p *swift.Pair) error {
+	if len(p.Values()) == 0 {
+		return nil
+	}
+	err := s.UnmarshalBase64(p.Values()[0])
+	if err != nil {
+		return err
+	}
+	s.Cookie = &Cookie{}
+	return s.Cookie.UnmarshalSwiftValidity(p)
 }
 
 func (a *Salt) UnmarshalBase64(value []byte) error {

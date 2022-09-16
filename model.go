@@ -28,12 +28,12 @@ import (
 
 type StringArray struct {
 	Value []string
-	Validity
+	Cookie
 }
 
 type entry struct {
 	key      string
-	validity *Validity
+	validity *Cookie
 	owid     *owid.OWID
 }
 
@@ -51,15 +51,15 @@ type Model struct {
 type ModelResponse struct {
 	Model
 	SID *ByteArray `json:"sid,omitempty"`
-	Val Validity   `json:"val,omitempty"`
+	Val Cookie     `json:"val,omitempty"`
 }
 
 // Extension to Model with information needed in a request.
-type Request struct {
+type ModelRequest struct {
 	Model
 }
 
-func (m *Request) UnmarshalRequest(r *http.Request) error {
+func (m *ModelRequest) UnmarshalRequest(r *http.Request) error {
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(m)
 	if err != nil {
@@ -112,6 +112,10 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 			if err != nil {
 				return err
 			}
+		case "state":
+			for _, i := range v.Values() {
+				m.State = append(m.State, string(i))
+			}
 		}
 	}
 	return nil
@@ -140,68 +144,13 @@ func (s *StringArray) UnmarshalSwift(p *swift.Pair) error {
 	return s.UnmarshalSwiftValidity(p)
 }
 
-func (e *Email) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
-	}
-	err := e.UnmarshalBase64(p.Values()[0])
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalSwiftValidity(p)
-}
-
-func (i *Identifier) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
-	}
-	err := i.UnmarshalBase64(p.Values()[0])
-	if err != nil {
-		return err
-	}
-	return i.UnmarshalSwiftValidity(p)
-}
-
-func (f *Preferences) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
-	}
-	err := f.UnmarshalBase64(p.Values()[0])
-	if err != nil {
-		return err
-	}
-	return f.UnmarshalSwiftValidity(p)
-}
-
-func (s *Salt) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
-	}
-	err := s.UnmarshalBase64(p.Values()[0])
-	if err != nil {
-		return err
-	}
-	return s.UnmarshalSwiftValidity(p)
-}
-
-func (b *ByteArray) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
-	}
-	err := b.UnmarshalBase64(p.Values()[0])
-	if err != nil {
-		return err
-	}
-	return b.UnmarshalSwiftValidity(p)
-}
-
 func (m *ModelResponse) getEntries() []*entry {
 	i := m.Model.getEntries()
 	if m.SID != nil {
 		i = append(i, &entry{
 			key:      "sid",
 			owid:     m.SID.GetOWID(),
-			validity: &m.SID.Validity})
+			validity: m.SID.Cookie})
 	}
 	return i
 }
@@ -212,25 +161,25 @@ func (m *Model) getEntries() []*entry {
 		i = append(i, &entry{
 			key:      "email",
 			owid:     m.Email.GetOWID(),
-			validity: &m.Email.Validity})
+			validity: m.Email.Cookie})
 	}
 	if m.Pref != nil {
 		i = append(i, &entry{
 			key:      "pref",
 			owid:     m.Pref.GetOWID(),
-			validity: &m.Pref.Validity})
+			validity: m.Pref.Cookie})
 	}
 	if m.Salt != nil {
 		i = append(i, &entry{
 			key:      "salt",
 			owid:     m.Salt.GetOWID(),
-			validity: &m.Salt.Validity})
+			validity: m.Salt.Cookie})
 	}
 	if m.RID != nil {
 		i = append(i, &entry{
 			key:      "rid",
 			owid:     m.RID.GetOWID(),
-			validity: &m.RID.Validity})
+			validity: m.RID.Cookie})
 	}
 	return i
 }

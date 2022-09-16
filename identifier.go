@@ -22,6 +22,7 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 	"github.com/google/uuid"
 )
 
@@ -29,10 +30,10 @@ import (
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/identifier.md
 type Identifier struct {
 	Base
+	Cookie    *Cookie   `json:"cookie,omitempty"`
 	IdType    string    `json:"type"`  // Type of identifier
 	Value     uuid.UUID `json:"value"` // In practice the value is a UUID so store it as one
 	Persisted bool      // True if the value has been stored.
-	Validity
 }
 
 func (i *Identifier) GetOWID() *owid.OWID {
@@ -49,7 +50,10 @@ func (i *Identifier) AsPrintable() string {
 func (i *Identifier) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	return i.Base.asHttpCookie(host, secure, i)
+	if i.Cookie == nil {
+		i.Cookie = &Cookie{Created: i.GetOWID().TimeStamp}
+	}
+	return i.Cookie.asHttpCookie(host, secure, i)
 }
 
 func NewIdentifier(
@@ -74,6 +78,18 @@ func IdentifierUnmarshalBase64(value []byte) (*Identifier, error) {
 	}
 	i.OWID.Target = &i
 	return &i, nil
+}
+
+func (i *Identifier) UnmarshalSwift(p *swift.Pair) error {
+	if len(p.Values()) == 0 {
+		return nil
+	}
+	err := i.UnmarshalBase64(p.Values()[0])
+	if err != nil {
+		return err
+	}
+	i.Cookie = &Cookie{}
+	return i.Cookie.UnmarshalSwiftValidity(p)
 }
 
 func (i *Identifier) UnmarshalBase64(value []byte) error {

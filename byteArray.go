@@ -23,12 +23,14 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 // ByteArray used for general purpose data storage.
 type ByteArray struct {
 	Base
-	Data []byte `json:"data"`
+	Cookie *Cookie `json:"cookie,omitempty"`
+	Data   []byte  `json:"data"`
 }
 
 func (a *ByteArray) GetOWID() *owid.OWID {
@@ -45,7 +47,10 @@ func (a *ByteArray) AsPrintable() string {
 func (a *ByteArray) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	return a.Base.asHttpCookie(host, secure, a)
+	if a.Cookie == nil {
+		a.Cookie = &Cookie{Created: a.GetOWID().TimeStamp}
+	}
+	return a.Cookie.asHttpCookie(host, secure, a)
 }
 
 func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {
@@ -66,6 +71,18 @@ func ByteArrayUnmarshalBase64(value []byte) (*ByteArray, error) {
 		return nil, err
 	}
 	return &a, nil
+}
+
+func (a *ByteArray) UnmarshalSwift(p *swift.Pair) error {
+	if len(p.Values()) == 0 {
+		return nil
+	}
+	err := a.UnmarshalBase64(p.Values()[0])
+	if err != nil {
+		return err
+	}
+	a.Cookie = &Cookie{}
+	return a.Cookie.UnmarshalSwiftValidity(p)
 }
 
 func (a *ByteArray) UnmarshalBase64(value []byte) error {
