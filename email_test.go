@@ -23,8 +23,9 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
+const testEmail = "email@example.com"
+
 func TestEmail(t *testing.T) {
-	const testEmail = "email@example.com"
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new email.
@@ -100,36 +101,18 @@ func TestEmail(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 
-		// Create a cookie pair and verify the correct result is returned.
-		p, err := NewPairFromField("email", e)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c, err := p.AsCookie(s.Domain, false)
+		// Create a cookie.
+		c, err := e.AsHttpCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c)
+		// Verify that the type is correct.
+		v, err := EmailUnmarshalBase64([]byte(c.Value))
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		// Verify that the data is correct when passed to the new method.
-		v1, err := EmailUnmarshalBase64([]byte(n.Value))
-		if err != nil {
-			t.Fatal(err)
-		}
-		verifyOWID(t, s, v1, true)
-
-		// Verify that the data is correct when passed out to a field.
-		var v2 Email
-		err = p.UnmarshalBase64(&v2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		verifyOWID(t, s, &v2, true)
+		verifyOWID(t, s, v, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 

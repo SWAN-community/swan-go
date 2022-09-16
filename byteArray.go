@@ -19,6 +19,7 @@ package swan
 import (
 	"bytes"
 	"encoding/hex"
+	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -39,6 +40,12 @@ func (a *ByteArray) GetOWID() *owid.OWID {
 
 func (a *ByteArray) AsPrintable() string {
 	return hex.EncodeToString(a.Data)
+}
+
+func (a *ByteArray) AsHttpCookie(
+	host string,
+	secure bool) (*http.Cookie, error) {
+	return a.Base.asHttpCookie(host, secure, a)
 }
 
 func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {

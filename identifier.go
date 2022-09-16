@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -31,6 +32,7 @@ type Identifier struct {
 	IdType    string    `json:"type"`  // Type of identifier
 	Value     uuid.UUID `json:"value"` // In practice the value is a UUID so store it as one
 	Persisted bool      // True if the value has been stored.
+	Validity
 }
 
 func (i *Identifier) GetOWID() *owid.OWID {
@@ -42,6 +44,12 @@ func (i *Identifier) GetOWID() *owid.OWID {
 
 func (i *Identifier) AsPrintable() string {
 	return i.Value.String()
+}
+
+func (i *Identifier) AsHttpCookie(
+	host string,
+	secure bool) (*http.Cookie, error) {
+	return i.Base.asHttpCookie(host, secure, i)
 }
 
 func NewIdentifier(

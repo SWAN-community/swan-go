@@ -23,8 +23,9 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
+const testSalt = "123456"
+
 func TestSalt(t *testing.T) {
-	const testSalt = "123456"
 	s := owid.NewTestDefaultSigner(t)
 
 	// Create the new salt with the from string method.
@@ -100,24 +101,14 @@ func TestSalt(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 
-		// Create a cookie pair and verify the correct result is returned.
-		p, err := NewPairFromField("salt", a)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c, err := p.AsCookie(s.Domain, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c)
+		// Create a cookie.
+		c, err := a.AsHttpCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify that the type is correct.
-		v, err := SaltUnmarshalBase64([]byte(n.Value))
+		v, err := SaltUnmarshalBase64([]byte(c.Value))
 		if err != nil {
 			t.Fatal(err)
 		}

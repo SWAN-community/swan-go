@@ -19,6 +19,7 @@ package swan
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -29,6 +30,7 @@ import (
 type Preferences struct {
 	Base
 	Data PreferencesData `json:"data"`
+	Validity
 }
 
 func (p *Preferences) GetOWID() *owid.OWID {
@@ -46,7 +48,15 @@ func (p *Preferences) AsPrintable() string {
 	return string(b)
 }
 
-func NewPreferences(s *owid.Signer, personalizedMarketing bool) (*Preferences, error) {
+func (p *Preferences) AsHttpCookie(
+	host string,
+	secure bool) (*http.Cookie, error) {
+	return p.Base.asHttpCookie(host, secure, p)
+}
+
+func NewPreferences(
+	s *owid.Signer,
+	personalizedMarketing bool) (*Preferences, error) {
 	var err error
 	p := &Preferences{Data: PreferencesData{personalizedMarketing}}
 	p.Version = swanVersion

@@ -101,36 +101,18 @@ func TestByteArray(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 
-		// Create a cookie pair and verify the correct result is returned.
-		p, err := NewPairFromField("byteArray", a)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c, err := p.AsCookie(s.Domain, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c)
+		// Create a cookie.
+		c, err := a.AsHttpCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify that the type is correct.
-		v1, err := ByteArrayUnmarshalBase64([]byte(n.Value))
+		v, err := SaltUnmarshalBase64([]byte(c.Value))
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyOWID(t, s, v1, true)
-
-		// Verify that the data is correct when passed out to a field.
-		var v2 ByteArray
-		err = p.UnmarshalBase64(&v2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		verifyOWID(t, s, &v2, true)
+		verifyOWID(t, s, v, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 

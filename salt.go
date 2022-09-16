@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -28,6 +29,7 @@ import (
 type Salt struct {
 	Base
 	Salt []byte `json:"salt"`
+	Validity
 }
 
 func (s *Salt) GetOWID() *owid.OWID {
@@ -39,6 +41,12 @@ func (s *Salt) GetOWID() *owid.OWID {
 
 func (s *Salt) AsPrintable() string {
 	return string(s.Salt)
+}
+
+func (s *Salt) AsHttpCookie(
+	host string,
+	secure bool) (*http.Cookie, error) {
+	return s.Base.asHttpCookie(host, secure, s)
 }
 
 func NewSaltFromString(s *owid.Signer, data string) (*Salt, error) {

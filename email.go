@@ -18,6 +18,7 @@ package swan
 
 import (
 	"bytes"
+	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -27,6 +28,7 @@ import (
 type Email struct {
 	Base
 	Email string `json:"email"`
+	Validity
 }
 
 func (e *Email) GetOWID() *owid.OWID {
@@ -38,6 +40,12 @@ func (e *Email) GetOWID() *owid.OWID {
 
 func (e *Email) AsPrintable() string {
 	return e.Email
+}
+
+func (e *Email) AsHttpCookie(
+	host string,
+	secure bool) (*http.Cookie, error) {
+	return e.Base.asHttpCookie(host, secure, e)
 }
 
 func NewEmail(s *owid.Signer, email string) (*Email, error) {

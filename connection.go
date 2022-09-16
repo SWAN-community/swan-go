@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -89,21 +90,16 @@ type Operation struct {
 }
 
 // Update operation from a User Interface Provider where the preferences, email
-// and salt have been captured. The RID is returned from a previous call to
-// swan.CreateRID.
+// and salt have been captured. If the RID is missing then one is added.
 type Update struct {
 	Operation
-	RID   *Identifier  // Random [browser] Id - see CreateRID
-	Pref  *Preferences // Preference for marketing - see CreatePreferences
-	Email *Email       // Email address - see CreateEmail
-	Salt  *Salt        // Salt for SID - see CreateSalt
+	Model
 }
 
 // Fetch operation to retrieve the SWAN data for use with a call to Decrypt or
 // DecryptRaw.
 type Fetch struct {
 	Operation
-	Existing []*Pair // Existing SWAN data pairs
 }
 
 // Stop operation to block an advert domain or identifier.
@@ -133,13 +129,11 @@ func NewConnection(operation Operation) *Connection {
 // SWAN
 func (c *Connection) NewFetch(
 	request *http.Request,
-	returnUrl string,
-	existing []*Pair) *Fetch {
+	returnUrl string) *Fetch {
 	f := Fetch{}
 	f.Operation = c.operation
 	f.Request = request
 	f.ReturnUrl = returnUrl
-	f.Existing = existing
 	return &f
 }
 
@@ -212,7 +206,7 @@ func (f *Fetch) GetURL() (string, *Error) {
 	if err != nil {
 		return "", &Error{Err: err}
 	}
-	return requestAsString(&f.SWAN, "fetch", q)
+	return requestAsString(&f.SWAN, "fetch", q, nil)
 }
 
 // GetURL contacts the SWAN operator domain with the access key and returns a
@@ -223,7 +217,7 @@ func (u *Update) GetURL() (string, *Error) {
 	if err != nil {
 		return "", &Error{Err: err}
 	}
-	return requestAsString(&u.SWAN, "update", q)
+	return requestAsString(&u.SWAN, "update", q, &u.Model)
 }
 
 // GetValues returns the values that can be used to configure a web browser with
@@ -252,20 +246,31 @@ func (s *Stop) GetURL() (string, *Error) {
 	if err != nil {
 		return "", &Error{Err: err}
 	}
-	return requestAsString(&s.SWAN, "stop", q)
+	return requestAsString(&s.SWAN, "stop", q, nil)
 }
 
-// Decrypt returns SWAN key value pairs for the data contained in the encrypted
-// string.
-func (c *Connection) Decrypt(encrypted string) ([]*Pair, *Error) {
-	return c.NewDecrypt(encrypted).decrypt()
+// Decrypt returns a SWAN model for the data contained in the encrypted string.
+func (d *Decrypt) Decrypt() (*ModelResponse, *Error) {
+	return d.decrypt("decrypt")
 }
 
-// DecryptRaw returns key value pairs for the raw SWAN data contained in the
-// encrypted string. Must only be used by User Interface Providers.
-func (c *Connection) DecryptRaw(
-	encrypted string) (map[string]interface{}, *Error) {
-	return c.NewDecrypt(encrypted).decryptRaw()
+// Decrypt returns a SWAN model for the data contained in the encrypted string.
+func (c *Connection) Decrypt(encrypted string) (*ModelResponse, *Error) {
+	return c.NewDecrypt(encrypted).Decrypt()
+}
+
+// DecryptRaw returns a SWAN model raw SWAN data contained in the encrypted
+// string. Will not work for access key's that are not related to User Interface
+// Providers.
+func (d *Decrypt) DecryptRaw() (*ModelResponse, *Error) {
+	return d.decrypt("decrypt-raw")
+}
+
+// DecryptRaw returns a SWAN model raw SWAN data contained in the encrypted
+// string. Will not work for access key's that are not related to User Interface
+// Providers.
+func (c *Connection) DecryptRaw(encrypted string) (*ModelResponse, *Error) {
+	return c.NewDecrypt(encrypted).DecryptRaw()
 }
 
 // CreateRID returns a new RID in OWID format from the SWAN Operator. Only
@@ -285,47 +290,29 @@ func (c *Client) homeNode() (string, *Error) {
 	if err != nil {
 		return "", &Error{Err: err}
 	}
-	return requestAsString(&c.SWAN, "home-node", q)
+	return requestAsString(&c.SWAN, "home-node", q, nil)
 }
 
-func (e *Decrypt) decrypt() ([]*Pair, *Error) {
-	var p []*Pair
+func (e *Decrypt) decrypt(a string) (*ModelResponse, *Error) {
+	m := &ModelResponse{}
 	q := url.Values{}
 	err := e.setData(&q)
 	if err != nil {
 		return nil, &Error{Err: err}
 	}
-	b, se := requestAsByteArray(&e.SWAN, "decrypt", q)
+	b, se := requestAsByteArray(&e.SWAN, a, q, nil)
 	if se != nil {
 		return nil, se
 	}
-	err = json.Unmarshal(b, &p)
+	err = json.Unmarshal(b, m)
 	if err != nil {
 		return nil, &Error{Err: err}
 	}
-	return p, nil
-}
-
-func (e *Decrypt) decryptRaw() (map[string]interface{}, *Error) {
-	r := make(map[string]interface{})
-	q := url.Values{}
-	err := e.setData(&q)
-	if err != nil {
-		return nil, &Error{Err: err}
-	}
-	b, se := requestAsByteArray(&e.SWAN, "decrypt-raw", q)
-	if se != nil {
-		return nil, se
-	}
-	err = json.Unmarshal(b, &r)
-	if err != nil {
-		return nil, &Error{Err: err}
-	}
-	return r, nil
+	return m, nil
 }
 
 func (s *SWAN) createRID() (*Identifier, *Error) {
-	b, se := requestAsByteArray(s, "create-rid", url.Values{})
+	b, se := requestAsByteArray(s, "create-rid", url.Values{}, nil)
 	if se != nil {
 		return nil, se
 	}
@@ -340,7 +327,8 @@ func (s *SWAN) createRID() (*Identifier, *Error) {
 func requestAsByteArray(
 	s *SWAN,
 	a string,
-	q url.Values) ([]byte, *Error) {
+	q url.Values,
+	m *Model) ([]byte, *Error) {
 
 	// Verify the provided parameters.
 	if s.Scheme == "" {
@@ -359,11 +347,25 @@ func requestAsByteArray(
 	u.Host = s.Operator
 	u.Path = "/swan/api/v1/" + a
 
-	// Add the access key to the data.
+	// Add the access key to the parameters.
 	q.Set("accessKey", s.AccessKey)
 
-	// Post the parameters to the SWAN url.
-	res, err := http.PostForm(u.String(), q)
+	// If there is a model then turn it in JSON.
+	var err error
+	var res *http.Response
+	if m != nil {
+		// Post the model as JSON.
+		var b []byte
+		b, err = json.Marshal(m)
+		if err != nil {
+			return nil, &Error{Err: err}
+		}
+		u.RawQuery = q.Encode()
+		res, err = http.Post(u.String(), "application/json", bytes.NewReader(b))
+	} else {
+		// Post the parameters to the SWAN url.
+		res, err = http.PostForm(u.String(), q)
+	}
 	if err != nil {
 		return nil, &Error{Err: err}
 	}
@@ -386,8 +388,9 @@ func requestAsByteArray(
 func requestAsString(
 	s *SWAN,
 	a string,
-	q url.Values) (string, *Error) {
-	b, err := requestAsByteArray(s, a, q)
+	q url.Values,
+	m *Model) (string, *Error) {
+	b, err := requestAsByteArray(s, a, q, m)
 	if err != nil {
 		return "", err
 	}
@@ -473,49 +476,13 @@ func (f *Fetch) setData(q *url.Values) error {
 	if err != nil {
 		return err
 	}
-	if f.Existing != nil {
-		for _, v := range f.Existing {
-			if v.Key == "rid" || v.Key == "pref" {
-				q.Set(v.Key, v.Value)
-			}
-		}
-	}
 	return nil
 }
 
 func (u *Update) setData(q *url.Values) error {
-	var s []byte
 	err := u.Operation.setData(q)
 	if err != nil {
 		return err
-	}
-	if u.RID != nil {
-		s, err = u.RID.MarshalBase64()
-		if err != nil {
-			return err
-		}
-		q.Set("rid", string(s))
-	}
-	if u.Pref != nil {
-		s, err = u.Pref.MarshalBase64()
-		if err != nil {
-			return err
-		}
-		q.Set("pref", string(s))
-	}
-	if u.Email != nil {
-		s, err = u.Email.MarshalBase64()
-		if err != nil {
-			return err
-		}
-		q.Set("email", string(s))
-	}
-	if u.Salt != nil {
-		s, err = u.Salt.MarshalBase64()
-		if err != nil {
-			return err
-		}
-		q.Set("salt", string(s))
 	}
 	return nil
 }

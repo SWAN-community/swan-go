@@ -99,36 +99,18 @@ func TestPreferences(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 
-		// Create a cookie pair and verify the correct result is returned.
-		p, err := NewPairFromField("pref", p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c, err := p.AsCookie(s.Domain, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a new pair from the cookie.
-		n, err := NewPairFromCookie(c)
+		// Create a cookie.
+		c, err := p.AsHttpCookie(s.Domain, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Verify that the type is correct.
-		v1, err := PreferencesUnmarshalBase64([]byte(n.Value))
+		v, err := PreferencesUnmarshalBase64([]byte(c.Value))
 		if err != nil {
 			t.Fatal(err)
 		}
-		verifyOWID(t, s, v1, true)
-
-		// Verify that the data is correct when passed out to a field.
-		var v2 Preferences
-		err = p.UnmarshalBase64(&v2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		verifyOWID(t, s, &v2, true)
+		verifyOWID(t, s, v, true)
 	})
 	t.Run("fail", func(t *testing.T) {
 
