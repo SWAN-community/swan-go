@@ -27,14 +27,13 @@ import (
 )
 
 type StringArray struct {
-	Value []string
-	Cookie
+	Value  []string
+	Cookie *Cookie
 }
 
-type entry struct {
-	key      string
-	validity *Cookie
-	owid     *owid.OWID
+type Entry struct {
+	Cookie *Cookie
+	OWID   *owid.OWID
 }
 
 // Model used when request or responding with SWAN data.
@@ -122,13 +121,13 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 }
 
 func (m *Model) Verify(scheme string) error {
-	for _, v := range m.getEntries() {
-		ok, err := v.owid.Verify(scheme)
+	for _, v := range m.GetEntries() {
+		ok, err := v.OWID.Verify(scheme)
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("%s invalid", v.key)
+			return fmt.Errorf("%s invalid", v.Cookie.Key)
 		}
 	}
 	return nil
@@ -141,45 +140,51 @@ func (s *StringArray) UnmarshalSwift(p *swift.Pair) error {
 			s.Value = append(s.Value, string(v))
 		}
 	}
-	return s.UnmarshalSwiftValidity(p)
+	if s.Cookie == nil {
+		s.Cookie = &Cookie{}
+	}
+	return s.Cookie.UnmarshalSwiftValidity(p)
 }
 
-func (m *ModelResponse) getEntries() []*entry {
-	i := m.Model.getEntries()
+func (m *ModelResponse) GetEntries() []*Entry {
+	i := m.Model.GetEntries()
 	if m.SID != nil {
-		i = append(i, &entry{
-			key:      "sid",
-			owid:     m.SID.GetOWID(),
-			validity: m.SID.Cookie})
+		m.SID.GetCookie().Key = "sid"
+		i = append(i, &Entry{
+			OWID:   m.SID.GetOWID(),
+			Cookie: m.SID.Cookie})
 	}
 	return i
 }
 
-func (m *Model) getEntries() []*entry {
-	i := make([]*entry, 0, 5)
+func (m *Model) GetEntries() []*Entry {
+	i := make([]*Entry, 0, 6)
 	if m.Email != nil {
-		i = append(i, &entry{
-			key:      "email",
-			owid:     m.Email.GetOWID(),
-			validity: m.Email.Cookie})
+		m.Email.GetCookie().Key = "email"
+		i = append(i, &Entry{
+			OWID:   m.Email.GetOWID(),
+			Cookie: m.Email.Cookie})
 	}
 	if m.Pref != nil {
-		i = append(i, &entry{
-			key:      "pref",
-			owid:     m.Pref.GetOWID(),
-			validity: m.Pref.Cookie})
+		m.Pref.GetCookie().Key = "pref"
+		i = append(i, &Entry{
+			OWID:   m.Pref.GetOWID(),
+			Cookie: m.Pref.Cookie})
 	}
 	if m.Salt != nil {
-		i = append(i, &entry{
-			key:      "salt",
-			owid:     m.Salt.GetOWID(),
-			validity: m.Salt.Cookie})
+		m.Salt.GetCookie().Key = "salt"
+		i = append(i, &Entry{
+			OWID:   m.Salt.GetOWID(),
+			Cookie: m.Salt.Cookie})
 	}
 	if m.RID != nil {
-		i = append(i, &entry{
-			key:      "rid",
-			owid:     m.RID.GetOWID(),
-			validity: m.RID.Cookie})
+		m.RID.GetCookie().Key = "rid"
+		i = append(i, &Entry{
+			OWID:   m.RID.GetOWID(),
+			Cookie: m.RID.Cookie})
+	}
+	if m.Stop != nil {
+		i = append(i, &Entry{Cookie: m.Stop.Cookie})
 	}
 	return i
 }
@@ -191,9 +196,9 @@ func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
 	m.Val.Created = time.Now().UTC()
 	m.Val.Expires = m.Val.Created.Add(
 		time.Duration(revalidateSeconds) * time.Second)
-	for _, v := range m.getEntries() {
-		if v.validity.Expires.Before(m.Val.Expires) {
-			m.Val.Expires = v.validity.Expires
+	for _, v := range m.GetEntries() {
+		if v.Cookie.Expires.Before(m.Val.Expires) {
+			m.Val.Expires = v.Cookie.Expires
 		}
 	}
 	return nil
