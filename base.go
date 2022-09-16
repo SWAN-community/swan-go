@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/base64"
+	"fmt"
+	"log"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
@@ -85,6 +87,9 @@ func (b *Base) unmarshalBinary(
 	b.Version, err = common.ReadByte(u)
 	if err != nil {
 		return err
+	}
+	if b.Version != swanVersion {
+		return fmt.Errorf("version '%d' not supported", b.Version)
 	}
 
 	// Call the provided function to read the fields for the calling type.
