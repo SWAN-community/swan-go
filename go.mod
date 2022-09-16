@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/SWAN-community/common-go v0.1.3
-	github.com/SWAN-community/owid-go v0.1.9-0.20220916140737-d44ee83dceeb
+	github.com/SWAN-community/owid-go v0.1.9-0.20220916151727-6625b31e1bda
 	github.com/SWAN-community/swift-go v0.1.7-0.20220916140926-924d23437419
 	github.com/google/uuid v1.3.0
 )
