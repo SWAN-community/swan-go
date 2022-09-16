@@ -65,8 +65,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/SWAN-community/access-go v0.1.0 h1:RkLBTMvzL16xTfcc2AO8Xn1fLz/dM/J4QOuJKCN5jAg=
 github.com/SWAN-community/access-go v0.1.0/go.mod h1:3X2m8zBWIcZbgWm2o4nBZ/z5VfX/dvdcUXwvBaeXq/o=
-github.com/SWAN-community/common-go v0.1.2 h1:zLHzEo//+WYdWwb3JBdF3vzMWe4qXwHWZnRHkVSfAIw=
-github.com/SWAN-community/common-go v0.1.2/go.mod h1:jdF6/j8H4h29+O4OobHE8JS0aWSU9Zx9g5Vuh9qOQng=
+github.com/SWAN-community/common-go v0.1.3 h1:CjbpqNcpXUJRCPt5Skm9bPFupNUCGf/97Cm/yU2JBAg=
+github.com/SWAN-community/common-go v0.1.3/go.mod h1:jdF6/j8H4h29+O4OobHE8JS0aWSU9Zx9g5Vuh9qOQng=
 github.com/SWAN-community/config-go v0.1.5 h1:fJl987+vnTU+tSyiGsa77XlBStnjI1gegKokHv4QCLE=
 github.com/SWAN-community/config-go v0.1.5/go.mod h1:0Vf7gvtQG1dpDFc1GjRJ1ghmZnoLClQ5JVrx57tXWLU=
 github.com/SWAN-community/swift-go v0.1.7-0.20220913145444-454bd5937fb0 h1:C+ayWUabV1DlDSfrsezcJcHch9QA0v648WphItufLvU=
