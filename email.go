@@ -39,6 +39,13 @@ func (e *Email) GetOWID() *owid.OWID {
 	return e.OWID
 }
 
+func (e *Email) GetCookie() *Cookie {
+	if e.Cookie == nil {
+		e.Cookie = &Cookie{Created: e.GetOWID().TimeStamp}
+	}
+	return e.Cookie
+}
+
 func (e *Email) AsPrintable() string {
 	return e.Email
 }
@@ -46,10 +53,7 @@ func (e *Email) AsPrintable() string {
 func (e *Email) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	if e.Cookie == nil {
-		e.Cookie = &Cookie{Created: e.GetOWID().TimeStamp}
-	}
-	return e.Cookie.asHttpCookie(host, secure, e)
+	return e.GetCookie().asHttpCookie(host, secure, e)
 }
 
 func NewEmail(s *owid.Signer, email string) (*Email, error) {

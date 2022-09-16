@@ -40,6 +40,13 @@ func (a *ByteArray) GetOWID() *owid.OWID {
 	return a.OWID
 }
 
+func (a *ByteArray) GetCookie() *Cookie {
+	if a.Cookie == nil {
+		a.Cookie = &Cookie{Created: a.GetOWID().TimeStamp}
+	}
+	return a.Cookie
+}
+
 func (a *ByteArray) AsPrintable() string {
 	return hex.EncodeToString(a.Data)
 }
@@ -47,10 +54,7 @@ func (a *ByteArray) AsPrintable() string {
 func (a *ByteArray) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	if a.Cookie == nil {
-		a.Cookie = &Cookie{Created: a.GetOWID().TimeStamp}
-	}
-	return a.Cookie.asHttpCookie(host, secure, a)
+	return a.GetCookie().asHttpCookie(host, secure, a)
 }
 
 func NewByteArray(s *owid.Signer, data []byte) (*ByteArray, error) {

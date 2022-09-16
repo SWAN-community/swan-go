@@ -40,6 +40,13 @@ func (s *Salt) GetOWID() *owid.OWID {
 	return s.OWID
 }
 
+func (s *Salt) GetCookie() *Cookie {
+	if s.Cookie == nil {
+		s.Cookie = &Cookie{Created: s.GetOWID().TimeStamp}
+	}
+	return s.Cookie
+}
+
 func (s *Salt) AsPrintable() string {
 	return string(s.Salt)
 }
@@ -47,10 +54,7 @@ func (s *Salt) AsPrintable() string {
 func (s *Salt) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	if s.Cookie == nil {
-		s.Cookie = &Cookie{Created: s.GetOWID().TimeStamp}
-	}
-	return s.Cookie.asHttpCookie(host, secure, s)
+	return s.GetCookie().asHttpCookie(host, secure, s)
 }
 
 func NewSaltFromString(s *owid.Signer, data string) (*Salt, error) {

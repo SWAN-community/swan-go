@@ -43,6 +43,13 @@ func (i *Identifier) GetOWID() *owid.OWID {
 	return i.OWID
 }
 
+func (i *Identifier) GetCookie() *Cookie {
+	if i.Cookie == nil {
+		i.Cookie = &Cookie{Created: i.GetOWID().TimeStamp}
+	}
+	return i.Cookie
+}
+
 func (i *Identifier) AsPrintable() string {
 	return i.Value.String()
 }
@@ -50,10 +57,7 @@ func (i *Identifier) AsPrintable() string {
 func (i *Identifier) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	if i.Cookie == nil {
-		i.Cookie = &Cookie{Created: i.GetOWID().TimeStamp}
-	}
-	return i.Cookie.asHttpCookie(host, secure, i)
+	return i.GetCookie().asHttpCookie(host, secure, i)
 }
 
 func NewIdentifier(

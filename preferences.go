@@ -41,6 +41,13 @@ func (p *Preferences) GetOWID() *owid.OWID {
 	return p.OWID
 }
 
+func (p *Preferences) GetCookie() *Cookie {
+	if p.Cookie == nil {
+		p.Cookie = &Cookie{Created: p.GetOWID().TimeStamp}
+	}
+	return p.Cookie
+}
+
 func (p *Preferences) AsPrintable() string {
 	b, err := json.Marshal(p.Data)
 	if err != nil {
@@ -52,10 +59,7 @@ func (p *Preferences) AsPrintable() string {
 func (p *Preferences) AsHttpCookie(
 	host string,
 	secure bool) (*http.Cookie, error) {
-	if p.Cookie == nil {
-		p.Cookie = &Cookie{Created: p.GetOWID().TimeStamp}
-	}
-	return p.Cookie.asHttpCookie(host, secure, p)
+	return p.GetCookie().asHttpCookie(host, secure, p)
 }
 
 func NewPreferences(
