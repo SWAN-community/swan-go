@@ -3,7 +3,7 @@ module github.com/SWAN-community/swan-go
 go 1.19
 
 require (
-	github.com/SWAN-community/common-go v0.1.3
+	github.com/SWAN-community/common-go v0.1.4-0.20221006162833-67646891d4da
 	github.com/SWAN-community/owid-go v0.1.9-0.20220916151727-6625b31e1bda
 	github.com/SWAN-community/swift-go v0.1.7-0.20220916140926-924d23437419
 	github.com/google/uuid v1.3.0
@@ -62,5 +62,3 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
-
-replace github.com/SWAN-community/owid-go => ../owid-go

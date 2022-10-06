@@ -97,7 +97,7 @@ func TestSeed(t *testing.T) {
 
 func createSeedTest(t *testing.T, s *owid.Signer) *Seed {
 	// Create the new seed.
-	d, err := NewSeed()
+	d, err := NewSeed([][]byte{{0}, {1}})
 	if err != nil {
 		t.Fatal(err)
 	}

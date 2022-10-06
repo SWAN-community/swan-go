@@ -22,7 +22,6 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
-	"github.com/google/uuid"
 )
 
 // Seed contains the information about the opportunity to advertise with a
@@ -30,12 +29,12 @@ import (
 // publisher or an agent acting on their behalf.
 type Seed struct {
 	Base
-	PubDomain   string       `json:"pubDomain"`   // The domain that the advertisements will appear on
-	UUID        uuid.UUID    `json:"uuid"`        // A unique identifier for this Id
-	RID         *Identifier  `json:"rid"`         // The Random [browser] Id
-	SID         *ByteArray   `json:"sid"`         // The Signed in Id
-	Preferences *Preferences `json:"preferences"` // The privacy preferences
-	Stopped     []string     `json:"stopped"`     // List of domains or advert IDs that should not be shown
+	PubDomain      string       `json:"pubDomain"`      // The domain that the advertisements will appear on
+	TransactionIds [][]byte     `json:"transactionIds"` // An array of transaction ids available in the containing request
+	RID            *Identifier  `json:"rid"`            // The Random [browser] Id
+	SID            *ByteArray   `json:"sid"`            // The Signed in Id
+	Preferences    *Preferences `json:"preferences"`    // The privacy preferences
+	Stopped        []string     `json:"stopped"`        // List of domains or advert IDs that should not be shown
 }
 
 func (s *Seed) GetOWID() *owid.OWID {
@@ -47,10 +46,11 @@ func (s *Seed) GetOWID() *owid.OWID {
 
 // Returns a new swan.Seed with the correct version and a random uuid ready to
 // have the other values added and then signed.
-func NewSeed() (*Seed, error) {
+// transactionIds associated with the new seed
+func NewSeed(transactionIds [][]byte) (*Seed, error) {
 	return &Seed{
-		Base: Base{Version: swanVersion},
-		UUID: uuid.New(),
+		Base:           Base{Version: swanVersion},
+		TransactionIds: transactionIds,
 	}, nil
 }
 
@@ -101,7 +101,7 @@ func (s *Seed) marshal(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = common.WriteMarshaller(b, s.UUID)
+	err = common.WriteByteArrayArray(b, s.TransactionIds)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *Seed) UnmarshalBinary(data []byte) error {
 		if err != nil {
 			return err
 		}
-		err = common.ReadMarshaller(b, &s.UUID)
+		s.TransactionIds, err = common.ReadByteArrayArray(b)
 		if err != nil {
 			return err
 		}
