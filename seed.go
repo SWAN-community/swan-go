@@ -32,7 +32,7 @@ type Seed struct {
 	PubDomain      string       `json:"pubDomain"`      // The domain that the advertisements will appear on
 	TransactionIds [][]byte     `json:"transactionIds"` // An array of transaction ids available in the containing request
 	RID            *Identifier  `json:"rid"`            // The Random [browser] Id
-	SID            *ByteArray   `json:"sid"`            // The Signed in Id
+	SID            *Identifier  `json:"sid"`            // The Signed in Id
 	Preferences    *Preferences `json:"preferences"`    // The privacy preferences
 	Stopped        []string     `json:"stopped"`        // List of domains or advert IDs that should not be shown
 }
@@ -150,7 +150,7 @@ func (s *Seed) UnmarshalBinary(data []byte) error {
 			return err
 		}
 		if s.SID == nil {
-			s.SID = &ByteArray{}
+			s.SID = &Identifier{}
 		}
 		err = common.ReadMarshaller(b, s.SID)
 		if err != nil {

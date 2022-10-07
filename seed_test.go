@@ -117,13 +117,13 @@ func createSeedTest(t *testing.T, s *owid.Signer) *Seed {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d.RID, err = NewIdentifier(s, "type", u)
+	d.RID, err = NewIdentifier(s, "rid", u)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create the new byte array.
-	d.SID, err = NewByteArray(s, []byte{1, 2, 3, 4})
+	d.SID, err = NewIdentifierFromByteArray(s, "sid", []byte{0, 1, 2, 3})
 	if err != nil {
 		t.Fatal(err)
 	}
