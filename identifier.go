@@ -18,22 +18,24 @@ package swan
 
 import (
 	"bytes"
+	"encoding"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
 	"github.com/SWAN-community/swift-go"
-	"github.com/google/uuid"
 )
 
 // Identifier represents a OneKey compatible random identifier.
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/identifier.md
 type Identifier struct {
 	Base
-	Cookie    *Cookie   `json:"cookie,omitempty"`
-	IdType    string    `json:"type"`  // Type of identifier
-	Value     uuid.UUID `json:"value"` // In practice the value is a UUID so store it as one
-	Persisted bool      // True if the value has been stored.
+	Cookie *Cookie `json:"cookie,omitempty"`
+	IdType string  `json:"type"` // Type of identifier
+	// Byte array for the identifier, usual a 16 byte UUID or the result of a hash operation
+	Value     []byte `json:"value"`
+	Persisted bool   // True if the value has been stored.
 }
 
 func (i *Identifier) GetOWID() *owid.OWID {
@@ -51,7 +53,10 @@ func (i *Identifier) GetCookie() *Cookie {
 }
 
 func (i *Identifier) AsPrintable() string {
-	return i.Value.String()
+	if i.Value != nil {
+		return hex.EncodeToString(i.Value)
+	}
+	return ""
 }
 
 func (i *Identifier) AsHttpCookie(
@@ -63,9 +68,20 @@ func (i *Identifier) AsHttpCookie(
 func NewIdentifier(
 	s *owid.Signer,
 	idType string,
-	value uuid.UUID) (*Identifier, error) {
+	source encoding.BinaryMarshaler) (*Identifier, error) {
+	v, err := source.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return NewIdentifierFromByteArray(s, idType, v)
+}
+
+func NewIdentifierFromByteArray(
+	s *owid.Signer,
+	idType string,
+	source []byte) (*Identifier, error) {
 	var err error
-	i := &Identifier{IdType: idType, Value: value}
+	i := &Identifier{IdType: idType, Value: source}
 	i.Version = swanVersion
 	i.OWID, err = s.CreateOWIDandSign(i)
 	if err != nil {
@@ -117,7 +133,7 @@ func (i *Identifier) marshal(b *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	err = common.WriteMarshaller(b, i.Value)
+	err = common.WriteByteArray(b, i.Value)
 	if err != nil {
 		return err
 	}
@@ -131,7 +147,7 @@ func (i *Identifier) UnmarshalBinary(data []byte) error {
 		if err != nil {
 			return err
 		}
-		err = common.ReadMarshaller(b, &i.Value)
+		i.Value, err = common.ReadByteArray(b)
 		if err != nil {
 			return err
 		}
