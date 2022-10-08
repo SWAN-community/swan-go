@@ -28,3 +28,17 @@ func verifyOWID(t *testing.T, s *owid.Signer, o Signed, expected bool) {
 		t.Fatalf("Expected '%t', got '%t'", expected, r)
 	}
 }
+
+func testCompareIdentifier(t *testing.T, a *Identifier, b *Identifier) {
+	if a.IdType != b.IdType {
+		t.Fatal("id type mismatch")
+	}
+	if len(a.Value) != len(b.Value) {
+		t.Fatal("byte array length mismatch")
+	}
+	for i := 0; i < len(a.Value); i++ {
+		if a.Value[i] != b.Value[i] {
+			t.Fatalf("byte array difference at '%d'", i)
+		}
+	}
+}

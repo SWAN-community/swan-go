@@ -64,6 +64,7 @@ func TestIdentifier(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, n, true)
+		testCompareIdentifier(t, i, n)
 	})
 	t.Run("json", func(t *testing.T) {
 
@@ -83,6 +84,7 @@ func TestIdentifier(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
+		testCompareIdentifier(t, i, &n)
 	})
 	t.Run("binary", func(t *testing.T) {
 
@@ -101,6 +103,7 @@ func TestIdentifier(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
+		testCompareIdentifier(t, i, &n)
 	})
 	t.Run("cookie", func(t *testing.T) {
 
@@ -116,6 +119,7 @@ func TestIdentifier(t *testing.T) {
 			t.Fatal(err)
 		}
 		verifyOWID(t, s, v, true)
+		testCompareIdentifier(t, i, v)
 	})
 	t.Run("fail", func(t *testing.T) {
 

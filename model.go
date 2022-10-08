@@ -49,8 +49,8 @@ type Model struct {
 // Extension to Model with information needed in a response.
 type ModelResponse struct {
 	Model
-	SID *ByteArray `json:"sid,omitempty"`
-	Val Cookie     `json:"val,omitempty"`
+	SID *Identifier `json:"sid,omitempty"`
+	Val Cookie      `json:"val,omitempty"`
 }
 
 // Extension to Model with information needed in a request.
@@ -100,7 +100,7 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 				return err
 			}
 		case "sid":
-			m.SID = &ByteArray{}
+			m.SID = &Identifier{}
 			err := m.SID.UnmarshalSwift(v)
 			if err != nil {
 				return err

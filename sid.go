@@ -24,12 +24,12 @@ import (
 
 // NewSID generates the SID by hashing the salt and the email to create a sha256
 // hash. If the email address is empty an empty byte array is returned.
-func NewSID(signer *owid.Signer, email *Email, salt *Salt) (*ByteArray, error) {
+func NewSID(signer *owid.Signer, email *Email, salt *Salt) (*Identifier, error) {
 	if len(email.Email) == 0 {
-		return NewByteArray(signer, []byte{})
+		return NewIdentifierFromByteArray(signer, "sid", []byte{})
 	}
 	hasher := sha256.New()
 	hasher.Write(append([]byte(email.Email), salt.Salt...))
 	b := hasher.Sum(nil)
-	return NewByteArray(signer, b)
+	return NewIdentifierFromByteArray(signer, "sid", b)
 }

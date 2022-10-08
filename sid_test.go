@@ -38,22 +38,11 @@ func TestSID(t *testing.T) {
 		// Verify that another SID with the same input values results in the
 		// same byte array.
 		n := testCreateSID(t, s)
-		testCompareByteArray(t, d, n)
+		testCompareIdentifier(t, d, n)
 	})
 }
 
-func testCompareByteArray(t *testing.T, a *ByteArray, b *ByteArray) {
-	if len(a.Data) != len(b.Data) {
-		t.Fatal("byte array length mismatch")
-	}
-	for i := 0; i < len(a.Data); i++ {
-		if a.Data[i] != b.Data[i] {
-			t.Fatalf("byte array difference at '%d'", i)
-		}
-	}
-}
-
-func testCreateSID(t *testing.T, s *owid.Signer) *ByteArray {
+func testCreateSID(t *testing.T, s *owid.Signer) *Identifier {
 	// Create the new email.
 	e, err := NewEmail(s, "email@example.com")
 	if err != nil {
@@ -67,10 +56,10 @@ func testCreateSID(t *testing.T, s *owid.Signer) *ByteArray {
 	}
 
 	// Create the SID.
-	d, err := NewSID(s, e, a)
+	i, err := NewSID(s, e, a)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return d
+	return i
 }
