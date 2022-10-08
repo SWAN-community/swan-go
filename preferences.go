@@ -29,9 +29,8 @@ import (
 // Preferences
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/preferences.md
 type Preferences struct {
-	Base
-	Cookie *Cookie         `json:"cookie,omitempty"`
-	Data   PreferencesData `json:"data"`
+	Writeable
+	Data PreferencesData `json:"data"`
 }
 
 func (p *Preferences) GetOWID() *owid.OWID {

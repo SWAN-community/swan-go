@@ -28,9 +28,8 @@ import (
 
 // ByteArray used for general purpose data storage.
 type ByteArray struct {
-	Base
-	Cookie *Cookie `json:"cookie,omitempty"`
-	Data   []byte  `json:"data"`
+	Writeable
+	Data []byte `json:"data"`
 }
 
 func (a *ByteArray) GetOWID() *owid.OWID {

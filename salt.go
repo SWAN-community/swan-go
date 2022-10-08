@@ -28,9 +28,8 @@ import (
 // Salt used to store the integer used as salt when hashing the email address
 // to form the Signed in Id (SID).
 type Salt struct {
-	Base
-	Cookie *Cookie `json:"cookie,omitempty"`
-	Salt   []byte  `json:"salt"`
+	Writeable
+	Salt []byte `json:"salt"`
 }
 
 func (s *Salt) GetOWID() *owid.OWID {

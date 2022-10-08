@@ -27,9 +27,8 @@ import (
 
 // Email used to represent an email address.
 type Email struct {
-	Base
-	Cookie *Cookie `json:"cookie,omitempty"`
-	Email  string  `json:"email"`
+	Writeable
+	Email string `json:"email"`
 }
 
 func (e *Email) GetOWID() *owid.OWID {

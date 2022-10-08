@@ -30,12 +30,10 @@ import (
 // Identifier represents a OneKey compatible random identifier.
 // https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/model/identifier.md
 type Identifier struct {
-	Base
-	Cookie *Cookie `json:"cookie,omitempty"`
-	IdType string  `json:"type"` // Type of identifier
+	Writeable
+	IdType string `json:"type"` // Type of identifier
 	// Byte array for the identifier, usual a 16 byte UUID or the result of a hash operation
-	Value     []byte `json:"value"`
-	Persisted bool   // True if the value has been stored.
+	Value []byte `json:"value"`
 }
 
 func (i *Identifier) GetOWID() *owid.OWID {
