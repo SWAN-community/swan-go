@@ -21,5 +21,5 @@ package swan
 type Writeable struct {
 	Base
 	Cookie    *Cookie `json:"-"` // Cookie data
-	Persisted bool    // True if the value has been stored.
+	Persisted bool    `json:"persisted"` // True if the value has been stored.
 }
