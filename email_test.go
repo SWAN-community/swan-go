@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 const testEmail = "email@example.com"
@@ -98,6 +99,31 @@ func TestEmail(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
+	})
+	t.Run("swift", func(t *testing.T) {
+
+		// Get a binary representation of the email.
+		b, err := e.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create the SWIFT pair.
+		p := &swift.Pair{}
+		p.SetCreated(e.GetOWID().TimeStamp)
+		p.SetExpires(e.GetOWID().GetExpires(1))
+		p.SetValues([][]byte{b})
+
+		// Create a new instance of the email from the SWIFT pair.
+		var n Email
+		err = n.UnmarshalSwift(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, &n, true)
+		verifyCookie(t, n.GetOWID(), n.Cookie, 1)
 	})
 	t.Run("cookie", func(t *testing.T) {
 

@@ -84,7 +84,7 @@ func (e *Email) UnmarshalSwift(p *swift.Pair) error {
 	if len(p.Values()) == 0 {
 		return nil
 	}
-	err := e.UnmarshalBase64(p.Values()[0])
+	err := e.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}

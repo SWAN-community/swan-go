@@ -89,7 +89,7 @@ func (s *Salt) UnmarshalSwift(p *swift.Pair) error {
 	if len(p.Values()) == 0 {
 		return nil
 	}
-	err := s.UnmarshalBase64(p.Values()[0])
+	err := s.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}

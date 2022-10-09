@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 func TestByteArray(t *testing.T) {
@@ -98,6 +99,31 @@ func TestByteArray(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
+	})
+	t.Run("swift", func(t *testing.T) {
+
+		// Get a binary representation of the byte array.
+		b, err := a.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create the SWIFT pair.
+		p := &swift.Pair{}
+		p.SetCreated(a.GetOWID().TimeStamp)
+		p.SetExpires(a.GetOWID().GetExpires(1))
+		p.SetValues([][]byte{b})
+
+		// Create a new instance of the byte array from the SWIFT pair.
+		var n ByteArray
+		err = n.UnmarshalSwift(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, &n, true)
+		verifyCookie(t, n.GetOWID(), n.Cookie, 1)
 	})
 	t.Run("cookie", func(t *testing.T) {
 

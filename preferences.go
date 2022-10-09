@@ -92,7 +92,7 @@ func (f *Preferences) UnmarshalSwift(p *swift.Pair) error {
 	if len(p.Values()) == 0 {
 		return nil
 	}
-	err := f.UnmarshalBase64(p.Values()[0])
+	err := f.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}

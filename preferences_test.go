@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 func TestPreferences(t *testing.T) {
@@ -96,6 +97,31 @@ func TestPreferences(t *testing.T) {
 
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
+	})
+	t.Run("swift", func(t *testing.T) {
+
+		// Get a binary representation of the preferences.
+		b, err := p.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create the SWIFT pair.
+		a := &swift.Pair{}
+		a.SetCreated(p.GetOWID().TimeStamp)
+		a.SetExpires(p.GetOWID().GetExpires(1))
+		a.SetValues([][]byte{b})
+
+		// Create a new instance of the preferences from the binary.
+		var n Preferences
+		err = n.UnmarshalSwift(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, &n, true)
+		verifyCookie(t, n.GetOWID(), n.Cookie, 1)
 	})
 	t.Run("cookie", func(t *testing.T) {
 

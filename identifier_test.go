@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 	"github.com/google/uuid"
 )
 
@@ -104,6 +105,32 @@ func TestIdentifier(t *testing.T) {
 		// Verify the new instance with the signer.
 		verifyOWID(t, s, &n, true)
 		testCompareIdentifier(t, i, &n)
+	})
+	t.Run("swift", func(t *testing.T) {
+
+		// Get a binary representation of the identifier.
+		b, err := i.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create the SWIFT pair.
+		p := &swift.Pair{}
+		p.SetCreated(i.GetOWID().TimeStamp)
+		p.SetExpires(i.GetOWID().GetExpires(1))
+		p.SetValues([][]byte{b})
+
+		// Create a new instance of the identifier from the SWIFT pair.
+		var n Identifier
+		err = n.UnmarshalSwift(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify the new instance with the signer.
+		verifyOWID(t, s, &n, true)
+		testCompareIdentifier(t, i, &n)
+		verifyCookie(t, n.GetOWID(), n.Cookie, 1)
 	})
 	t.Run("cookie", func(t *testing.T) {
 

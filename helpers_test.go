@@ -35,6 +35,15 @@ func verifyOWID(t *testing.T, s *owid.Signer, o Verifiable, expected bool) {
 	}
 }
 
+func verifyCookie(t *testing.T, o *owid.OWID, c *Cookie, days int) {
+	if o.TimeStamp != c.Created {
+		t.Fatalf("created")
+	}
+	if o.GetExpires(days) != c.Expires {
+		t.Fatalf("expires")
+	}
+}
+
 func testCompareIdentifier(t *testing.T, a *Identifier, b *Identifier) {
 	if a.IdType != b.IdType {
 		t.Fatal("id type mismatch")

@@ -37,7 +37,7 @@ func TestResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rid64, err := rid.MarshalBase64()
+	ridA, err := rid.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	email64, err := email.MarshalBase64()
+	emailA, err := email.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	salt64, err := salt.MarshalBase64()
+	saltA, err := salt.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pref64, err := pref.MarshalBase64()
+	prefA, err := pref.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,10 +69,10 @@ func TestResponse(t *testing.T) {
 	t.Run("pass", func(t *testing.T) {
 		m := &ModelResponse{}
 		r := &swift.Results{}
-		responseAddPair(r, "rid", [][]byte{rid64})
-		responseAddPair(r, "pref", [][]byte{pref64})
-		responseAddPair(r, "salt", [][]byte{salt64})
-		responseAddPair(r, "email", [][]byte{email64})
+		responseAddPair(r, "rid", [][]byte{ridA})
+		responseAddPair(r, "pref", [][]byte{prefA})
+		responseAddPair(r, "salt", [][]byte{saltA})
+		responseAddPair(r, "email", [][]byte{emailA})
 		err := m.UnmarshalSwift(r)
 		if err != nil {
 			t.Fatal(err)
