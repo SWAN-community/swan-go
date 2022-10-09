@@ -22,6 +22,7 @@ import "github.com/SWAN-community/owid-go"
 type Signed interface {
 
 	// Returns the OWID associated with the instance. The returned OWID must
-	// have the Target field set to the instance being verified.
+	// have the Target field set to the instance being verified. If the entity
+	// has not been signed then nil is returned.
 	GetOWID() *owid.OWID
 }

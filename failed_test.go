@@ -124,4 +124,8 @@ func TestFailed(t *testing.T) {
 		f.Host = "different.com"
 		verifyOWID(t, s, f, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		f.OWID = nil
+		verifyOWID(t, s, f, false)
+	})
 }

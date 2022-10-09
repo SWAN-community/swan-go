@@ -20,6 +20,9 @@ package swan
 // including identifiers, email, salt, and preferences.
 type Writeable struct {
 	Base
-	Cookie    *Cookie `json:"-"` // Cookie data
+	Cookie    *Cookie `json:"-"`         // Cookie data
 	Persisted bool    `json:"persisted"` // True if the value has been stored.
 }
+
+// getCookie returns the cookie instance. Used by the Entry interface.
+func (m *Writeable) getCookie() *Cookie { return m.Cookie }

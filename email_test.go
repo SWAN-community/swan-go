@@ -121,4 +121,8 @@ func TestEmail(t *testing.T) {
 		e.Email = "different@test.com"
 		verifyOWID(t, s, e, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		e.OWID = nil
+		verifyOWID(t, s, e, false)
+	})
 }

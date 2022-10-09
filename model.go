@@ -22,18 +22,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/swift-go"
 )
 
-type StringArray struct {
-	Value  []string
-	Cookie *Cookie
-}
-
-type Entry struct {
-	Cookie *Cookie
-	OWID   *owid.OWID
+type Entry interface {
+	Signed
+	getCookie() *Cookie
 }
 
 // Model used when request or responding with SWAN data.
@@ -58,6 +53,40 @@ type ModelRequest struct {
 	Model
 }
 
+// ModelRequestFromHttpRequest turns the request instance into a SWAN model.
+// Any errors are responded to by the method. The caller can assume any problems
+// have been dealt with if there is a nil reponse.
+func ModelRequestFromHttpRequest(
+	r *http.Request,
+	w http.ResponseWriter) *ModelRequest {
+	m := &ModelRequest{}
+	err := m.UnmarshalRequest(r)
+	if err != nil {
+		common.ReturnApplicationError(w, &common.HttpError{
+			Message: "bad data structure",
+			Error:   err,
+			Code:    http.StatusBadRequest})
+		return nil
+	}
+	return m
+}
+
+// Verify the OWIDs in the model provided and handles any response to the
+// caller. True is returned if the model is valid, otherwise false.
+func (m *ModelRequest) Verify(w http.ResponseWriter, scheme string) bool {
+	err := m.Model.Verify(scheme)
+	if err != nil {
+		common.ReturnApplicationError(w, &common.HttpError{
+			Message: "invalid data",
+			Error:   err,
+			Code:    http.StatusBadRequest})
+		return false
+	}
+	return true
+}
+
+// UnmarshalRequest populates the values of the model with those from the
+// http request.
 func (m *ModelRequest) UnmarshalRequest(r *http.Request) error {
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(m)
@@ -67,6 +96,7 @@ func (m *ModelRequest) UnmarshalRequest(r *http.Request) error {
 	return nil
 }
 
+// UnmarshalSwift populates the values of the model with the SWIFT results.
 func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 
 	// Set the fields that are also fields in the SWIFT results.
@@ -120,19 +150,26 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 	return nil
 }
 
+// Verify confirms all the entries in the model have OWIDs that pass
+// verification. The first one that does not pass validation will result in an
+// error being returned. If no errors are returned then the model is fully
+// verified.
 func (m *Model) Verify(scheme string) error {
 	for _, v := range m.GetEntries() {
-		ok, err := v.OWID.Verify(scheme)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return fmt.Errorf("%s invalid", v.Cookie.Key)
+		if v.GetOWID() != nil {
+			ok, err := v.GetOWID().Verify(scheme)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return fmt.Errorf("%s invalid", v.getCookie().Key)
+			}
 		}
 	}
 	return nil
 }
 
+// UnmarshalSwift to turn a SWIFT pair into a string array.
 func (s *StringArray) UnmarshalSwift(p *swift.Pair) error {
 	s.Value = make([]string, 0, len(p.Values()))
 	for _, v := range p.Values() {
@@ -146,45 +183,37 @@ func (s *StringArray) UnmarshalSwift(p *swift.Pair) error {
 	return s.Cookie.UnmarshalSwiftValidity(p)
 }
 
-func (m *ModelResponse) GetEntries() []*Entry {
+// GetEntries returns all the members of the model response as an array.
+func (m *ModelResponse) GetEntries() []Entry {
 	i := m.Model.GetEntries()
-	if m.SID != nil {
+	if m.SID != nil && m.SID.OWID != nil {
 		m.SID.GetCookie().Key = "sid"
-		i = append(i, &Entry{
-			OWID:   m.SID.GetOWID(),
-			Cookie: m.SID.Cookie})
+		i = append(i, m.SID)
 	}
 	return i
 }
 
-func (m *Model) GetEntries() []*Entry {
-	i := make([]*Entry, 0, 6)
+// GetEntries returns all the members of the model as an array.
+func (m *Model) GetEntries() []Entry {
+	i := make([]Entry, 0, 6)
 	if m.Email != nil {
 		m.Email.GetCookie().Key = "email"
-		i = append(i, &Entry{
-			OWID:   m.Email.GetOWID(),
-			Cookie: m.Email.Cookie})
+		i = append(i, m.Email)
 	}
 	if m.Pref != nil {
 		m.Pref.GetCookie().Key = "pref"
-		i = append(i, &Entry{
-			OWID:   m.Pref.GetOWID(),
-			Cookie: m.Pref.Cookie})
+		i = append(i, m.Pref)
 	}
 	if m.Salt != nil {
 		m.Salt.GetCookie().Key = "salt"
-		i = append(i, &Entry{
-			OWID:   m.Salt.GetOWID(),
-			Cookie: m.Salt.Cookie})
+		i = append(i, m.Salt)
 	}
 	if m.RID != nil {
 		m.RID.GetCookie().Key = "rid"
-		i = append(i, &Entry{
-			OWID:   m.RID.GetOWID(),
-			Cookie: m.RID.Cookie})
+		i = append(i, m.RID)
 	}
 	if m.Stop != nil {
-		i = append(i, &Entry{Cookie: m.Stop.Cookie})
+		i = append(i, m.Stop)
 	}
 	return i
 }
@@ -197,8 +226,8 @@ func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
 	m.Val.Expires = m.Val.Created.Add(
 		time.Duration(revalidateSeconds) * time.Second)
 	for _, v := range m.GetEntries() {
-		if v.Cookie.Expires.Before(m.Val.Expires) {
-			m.Val.Expires = v.Cookie.Expires
+		if v.getCookie().Expires.Before(m.Val.Expires) {
+			m.Val.Expires = v.getCookie().Expires
 		}
 	}
 	return nil

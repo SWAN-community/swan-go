@@ -32,7 +32,12 @@ type Salt struct {
 	Salt []byte `json:"salt"`
 }
 
+// Returns an OWID with the target populated, or nil of the Salt has not been
+// signed.
 func (s *Salt) GetOWID() *owid.OWID {
+	if s.OWID == nil {
+		return nil
+	}
 	if s.OWID.Target == nil {
 		s.OWID.Target = s
 	}

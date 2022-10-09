@@ -32,7 +32,12 @@ type ByteArray struct {
 	Data []byte `json:"data"`
 }
 
+// Returns an OWID with the target populated, or nil of the ByteArray has not
+// been signed.
 func (a *ByteArray) GetOWID() *owid.OWID {
+	if a.OWID == nil {
+		return nil
+	}
 	if a.OWID.Target == nil {
 		a.OWID.Target = a
 	}

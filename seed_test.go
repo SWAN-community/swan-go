@@ -93,6 +93,10 @@ func TestSeed(t *testing.T) {
 		d.PubDomain = "different.com"
 		verifyOWID(t, s, d, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		d.OWID = nil
+		verifyOWID(t, s, d, false)
+	})
 }
 
 func createSeedTest(t *testing.T, s *owid.Signer) *Seed {

@@ -29,7 +29,12 @@ type Empty struct {
 	Response
 }
 
+// Returns an OWID with the target populated, or nil of the Empty has not been
+// signed.
 func (e *Empty) GetOWID() *owid.OWID {
+	if e.OWID == nil {
+		return nil
+	}
 	if e.OWID.Target == nil {
 		e.OWID.Target = e
 	}

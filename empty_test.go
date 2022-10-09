@@ -124,4 +124,8 @@ func TestEmpty(t *testing.T) {
 		e.StructType = 0
 		verifyOWID(t, s, e, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		e.OWID = nil
+		verifyOWID(t, s, e, false)
+	})
 }

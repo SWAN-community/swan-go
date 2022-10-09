@@ -16,35 +16,14 @@
 
 package swan
 
-import (
-	"testing"
+import "github.com/SWAN-community/owid-go"
 
-	"github.com/SWAN-community/owid-go"
-)
-
-func verifyOWID(t *testing.T, s *owid.Signer, o Signed, expected bool) {
-	if o.GetOWID() == nil {
-		if expected {
-			t.Fatalf("unsigned can never be true")
-		}
-		return
-	}
-	r, _ := s.Verify(o.GetOWID())
-	if r != expected {
-		t.Fatalf("Expected '%t', got '%t'", expected, r)
-	}
+// StringArray used to store arrays of entries in the SWAN model. For example
+// advert identifiers that have been stopped.
+type StringArray struct {
+	Writeable
+	Value []string
 }
 
-func testCompareIdentifier(t *testing.T, a *Identifier, b *Identifier) {
-	if a.IdType != b.IdType {
-		t.Fatal("id type mismatch")
-	}
-	if len(a.Value) != len(b.Value) {
-		t.Fatal("byte array length mismatch")
-	}
-	for i := 0; i < len(a.Value); i++ {
-		if a.Value[i] != b.Value[i] {
-			t.Fatalf("byte array difference at '%d'", i)
-		}
-	}
-}
+// getOWID always returns nil. Provided to satisfy the Entry interface.
+func (s *StringArray) GetOWID() *owid.OWID { return nil }

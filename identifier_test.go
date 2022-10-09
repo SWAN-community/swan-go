@@ -128,4 +128,8 @@ func TestIdentifier(t *testing.T) {
 		i.IdType += " "
 		verifyOWID(t, s, i, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		i.OWID = nil
+		verifyOWID(t, s, i, false)
+	})
 }

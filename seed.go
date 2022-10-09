@@ -37,7 +37,12 @@ type Seed struct {
 	Stopped        []string     `json:"stopped"`        // List of domains or advert IDs that should not be shown
 }
 
+// Returns an OWID with the target populated, or nil of the Seed has not been
+// signed.
 func (s *Seed) GetOWID() *owid.OWID {
+	if s.OWID == nil {
+		return nil
+	}
 	if s.OWID.Target == nil {
 		s.OWID.Target = s
 	}

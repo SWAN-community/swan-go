@@ -124,4 +124,8 @@ func TestBid(t *testing.T) {
 		i.MediaURL = "https://different"
 		verifyOWID(t, s, i, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		i.OWID = nil
+		verifyOWID(t, s, i, false)
+	})
 }

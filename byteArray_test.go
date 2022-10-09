@@ -121,4 +121,8 @@ func TestByteArray(t *testing.T) {
 		a.Data = []byte{4, 3, 2, 1}
 		verifyOWID(t, s, a, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		a.OWID = nil
+		verifyOWID(t, s, a, false)
+	})
 }

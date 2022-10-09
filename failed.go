@@ -32,7 +32,12 @@ type Failed struct {
 	Error string `json:"error"` // The error message to add to the tree.
 }
 
+// Returns an OWID with the target populated, or nil of the Failed has not been
+// signed.
 func (f *Failed) GetOWID() *owid.OWID {
+	if f.OWID == nil {
+		return nil
+	}
 	if f.OWID.Target == nil {
 		f.OWID.Target = f
 	}

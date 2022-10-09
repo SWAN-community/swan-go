@@ -121,4 +121,8 @@ func TestSalt(t *testing.T) {
 		a.Salt = []byte{2}
 		verifyOWID(t, s, a, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		a.OWID = nil
+		verifyOWID(t, s, a, false)
+	})
 }

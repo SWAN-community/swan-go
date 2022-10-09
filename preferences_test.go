@@ -119,4 +119,8 @@ func TestPreferences(t *testing.T) {
 		p.Data.UseBrowsingForPersonalization = false
 		verifyOWID(t, s, p, false)
 	})
+	t.Run("unsigned", func(t *testing.T) {
+		p.OWID = nil
+		verifyOWID(t, s, p, false)
+	})
 }
