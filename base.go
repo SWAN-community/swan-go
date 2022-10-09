@@ -32,6 +32,11 @@ type Base struct {
 	OWID    *owid.OWID `json:"source"`  // OWID related to the structure
 }
 
+// GetVersion used to indicate the version encoding of the type.
+func (b *Base) getVersion() byte {
+	return b.Version
+}
+
 // Returns true if the structure is signed, otherwise false.
 func (b *Base) IsSigned() bool {
 	return b.OWID != nil && b.OWID.Signature != nil && len(b.OWID.Signature) > 0
@@ -92,7 +97,7 @@ func (b *Base) unmarshalBinary(
 	if err != nil {
 		return err
 	}
-	if b.Version != swanVersion {
+	if b.Version < swanMinVersion || b.Version > swanMaxVersion {
 		return fmt.Errorf("version '%d' not supported", b.Version)
 	}
 

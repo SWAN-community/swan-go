@@ -19,7 +19,6 @@ package swan
 // The version to use when creating SWAN instances.
 const swanVersion byte = 1
 
-// The character used to separate fields when building byte arrays for signing.
-// See OneKey signature specification.
-// https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/security-signatures.md
-const oneKeyFieldSeparator = "\u2063"
+// The minimum and maximum versions that are supported.
+const swanMinVersion = swanVersion
+const swanMaxVersion = swanVersion

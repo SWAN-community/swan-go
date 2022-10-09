@@ -28,7 +28,12 @@ import (
 
 type Entry interface {
 	Verifiable
+
+	// Returns the cookie representation of the SWAN entity.
 	getCookie() *Cookie
+
+	// Returns the version of the SWAN entity.
+	getVersion() byte
 }
 
 // Model used when request or responding with SWAN data.
@@ -151,9 +156,9 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 }
 
 // Verify confirms all the entries in the model have OWIDs that pass
-// verification. The first one that does not pass validation will result in an
-// error being returned. If no errors are returned then the model is fully
-// verified.
+// verification and have versions that are supported. The first one that does
+// not pass will result in an error being returned. If no errors are returned
+// then the model is fully verified.
 func (m *Model) Verify(scheme string) error {
 	for _, v := range m.GetEntries() {
 		if v.GetOWID() != nil {
@@ -164,6 +169,10 @@ func (m *Model) Verify(scheme string) error {
 			if !ok {
 				return fmt.Errorf("%s invalid", v.getCookie().Key)
 			}
+		}
+		n := v.getVersion()
+		if n < swanMinVersion || n > swanMaxVersion {
+			return fmt.Errorf("version '%d' not supported", n)
 		}
 	}
 	return nil
