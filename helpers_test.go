@@ -22,8 +22,8 @@ import (
 	"github.com/SWAN-community/owid-go"
 )
 
-func verifyOWID(t *testing.T, s *owid.Signer, o Signed, expected bool) {
-	if o.GetOWID() == nil {
+func verifyOWID(t *testing.T, s *owid.Signer, o Verifiable, expected bool) {
+	if !o.IsSigned() {
 		if expected {
 			t.Fatalf("unsigned can never be true")
 		}

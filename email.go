@@ -31,11 +31,10 @@ type Email struct {
 	Email string `json:"email"`
 }
 
-// Returns an OWID with the target populated, or nil of the Email has not been
-// signed.
+// Returns an OWID with the target populated.
 func (e *Email) GetOWID() *owid.OWID {
 	if e.OWID == nil {
-		return nil
+		e.OWID = &owid.OWID{}
 	}
 	if e.OWID.Target == nil {
 		e.OWID.Target = e

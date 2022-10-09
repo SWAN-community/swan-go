@@ -18,11 +18,13 @@ package swan
 
 import "github.com/SWAN-community/owid-go"
 
-// Signed interface used to identify any types that can be verified.
-type Signed interface {
+// Verifiable interface used to identify any types that can be verified.
+type Verifiable interface {
 
 	// Returns the OWID associated with the instance. The returned OWID must
-	// have the Target field set to the instance being verified. If the entity
-	// has not been signed then nil is returned.
+	// have the Target field set to the instance being verified.
 	GetOWID() *owid.OWID
+
+	// True if the entity has been signed, otherwise false.
+	IsSigned() bool
 }

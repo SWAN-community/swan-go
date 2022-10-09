@@ -36,11 +36,10 @@ type Identifier struct {
 	Value []byte `json:"value"`
 }
 
-// Returns an OWID with the target populated, or nil of the Identifier has not
-// been signed.
+// Returns an OWID with the target populated.
 func (i *Identifier) GetOWID() *owid.OWID {
 	if i.OWID == nil {
-		return nil
+		i.OWID = &owid.OWID{}
 	}
 	if i.OWID.Target == nil {
 		i.OWID.Target = i

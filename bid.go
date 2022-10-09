@@ -31,11 +31,10 @@ type Bid struct {
 	AdvertiserURL string `json:"advertiserURL"` // The URL to direct the browser to if the advert is selected
 }
 
-// Returns an OWID with the target populated, or nil of the Bid has not been
-// signed.
+// Returns an OWID with the target populated.
 func (b *Bid) GetOWID() *owid.OWID {
 	if b.OWID == nil {
-		return nil
+		b.OWID = &owid.OWID{}
 	}
 	if b.OWID.Target == nil {
 		b.OWID.Target = b

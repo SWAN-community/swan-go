@@ -27,7 +27,7 @@ import (
 )
 
 type Entry interface {
-	Signed
+	Verifiable
 	getCookie() *Cookie
 }
 

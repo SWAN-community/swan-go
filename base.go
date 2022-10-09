@@ -32,6 +32,11 @@ type Base struct {
 	OWID    *owid.OWID `json:"source"`  // OWID related to the structure
 }
 
+// Returns true if the structure is signed, otherwise false.
+func (b *Base) IsSigned() bool {
+	return b.OWID != nil && b.OWID.Signature != nil && len(b.OWID.Signature) > 0
+}
+
 // writeData writes the version before calling the function.
 func (b *Base) writeData(u *bytes.Buffer, f func(*bytes.Buffer) error) error {
 	err := common.WriteByte(u, b.Version)

@@ -33,11 +33,10 @@ type Preferences struct {
 	Data PreferencesData `json:"data"`
 }
 
-// Returns an OWID with the target populated, or nil of the Preferences has not
-// been signed.
+// Returns an OWID with the target populated.
 func (p *Preferences) GetOWID() *owid.OWID {
 	if p.OWID == nil {
-		return nil
+		p.OWID = &owid.OWID{}
 	}
 	if p.OWID.Target == nil {
 		p.OWID.Target = p
