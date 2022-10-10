@@ -116,5 +116,13 @@ func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
 			m.Val.Expires = v.getCookie().Expires
 		}
 	}
+
+	// Now set the cookie validity of all cookies to the validity period
+	// expiration date. This ensures the browser will clear the cookies all at
+	// the same time forcing a refresh.
+	for _, v := range m.GetEntries() {
+		v.getCookie().Expires = m.Val.Expires
+	}
+
 	return nil
 }

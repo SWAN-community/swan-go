@@ -19,6 +19,7 @@ package swan
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"testing"
 	"time"
 
@@ -56,8 +57,14 @@ func TestSetValidity(t *testing.T) {
 		// Check the duration between the created and expires times is the
 		// constant.
 		d := m.Val.Expires.Sub(m.Val.Created)
-		if int(d.Seconds()) != testValiditySeconds {
+		if math.Ceil(d.Seconds()) != testValiditySeconds {
 			t.Fatalf("expected %d found %v", testValiditySeconds, d.Seconds())
+		}
+
+		// Check the cookie.
+		c := m.Val.AsHttpCookie("test.host", true)
+		if c.Value == "" {
+			t.Fatal("validity cookie must have time value")
 		}
 	})
 
@@ -78,7 +85,7 @@ func TestSetValidity(t *testing.T) {
 		// Check the duration between the created and expires times is the
 		// constant.
 		d := m.Val.Expires.Sub(m.Val.Created)
-		if int(d.Seconds()) != testValiditySeconds/2 {
+		if math.Ceil(d.Seconds()) != testValiditySeconds/2 {
 			t.Fatalf("expected %d found %v", testValiditySeconds/2, d.Seconds())
 		}
 	})

@@ -16,6 +16,8 @@
 
 package swan
 
+import "net/http"
+
 // Time of the last refresh of the SWAN data. Used by the publisher to determine
 // if a refresh of SWAN data is required. The created date is the content of the
 // cookie, and the expiry date which is used by the browser to clear the cookie
@@ -29,4 +31,11 @@ type Time struct {
 func (l *Time) GetCookie() *Cookie {
 	l.Key = "time"
 	return &l.Cookie
+}
+
+// AsHttpCookie sets the value of the cookie to the created date as a string.
+func (l *Time) AsHttpCookie(host string, secure bool) *http.Cookie {
+	c := l.GetCookie().AsHttpCookie(host, secure)
+	c.Value = l.Created.String()
+	return c
 }
