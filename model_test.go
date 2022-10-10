@@ -56,13 +56,13 @@ func TestSetValidity(t *testing.T) {
 
 		// Check the duration between the created and expires times is the
 		// constant.
-		d := m.Val.Expires.Sub(m.Val.Created)
+		d := m.Ref.Expires.Sub(m.Ref.Created)
 		if math.Ceil(d.Seconds()) != testValiditySeconds {
 			t.Fatalf("expected %d found %v", testValiditySeconds, d.Seconds())
 		}
 
 		// Check the cookie.
-		c := m.Val.AsHttpCookie("test.host", true)
+		c := m.Ref.AsHttpCookie("test.host", true)
 		if c.Value == "" {
 			t.Fatal("validity cookie must have time value")
 		}
@@ -75,7 +75,7 @@ func TestSetValidity(t *testing.T) {
 		m.SetValidity(testValiditySeconds)
 
 		// Change the expiring date of the RID to 1/2 the validity period.
-		m.RID.GetCookie().Expires = m.Val.Expires.Add(
+		m.RID.GetCookie().Expires = m.Ref.Expires.Add(
 			-time.Second * testValiditySeconds / 2)
 
 		// Reset the validity now there is an entity with an earlier time. This
@@ -84,7 +84,7 @@ func TestSetValidity(t *testing.T) {
 
 		// Check the duration between the created and expires times is the
 		// constant.
-		d := m.Val.Expires.Sub(m.Val.Created)
+		d := m.Ref.Expires.Sub(m.Ref.Created)
 		if math.Ceil(d.Seconds()) != testValiditySeconds/2 {
 			t.Fatalf("expected %d found %v", testValiditySeconds/2, d.Seconds())
 		}

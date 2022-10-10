@@ -26,7 +26,7 @@ import (
 type ModelResponse struct {
 	Model
 	SID *Identifier `json:"sid,omitempty"`
-	Val Time        `json:"val,omitempty"` // Validity of the data
+	Ref LastRefresh `json:"val,omitempty"` // Validity of the data
 }
 
 // UnmarshalSwift populates the values of the model with the SWIFT results.
@@ -103,8 +103,8 @@ func (m *ModelResponse) GetEntries() []Entry {
 // response model. This is used by the caller to indicate when they should
 // recheck the returned data with the network for updates.
 func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
-	m.Val.Created = time.Now().UTC()
-	m.Val.Expires = m.Val.Created.Add(
+	m.Ref.Created = time.Now().UTC()
+	m.Ref.Expires = m.Ref.Created.Add(
 		time.Duration(revalidateSeconds) * time.Second)
 
 	// If there are any entries that will expire before the validation expires
@@ -112,8 +112,8 @@ func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
 	// of the associated entries.
 	for _, v := range m.GetEntries() {
 		c := v.getCookie()
-		if !c.Expires.IsZero() && c.Expires.Before(m.Val.Expires) {
-			m.Val.Expires = v.getCookie().Expires
+		if !c.Expires.IsZero() && c.Expires.Before(m.Ref.Expires) {
+			m.Ref.Expires = v.getCookie().Expires
 		}
 	}
 
@@ -121,7 +121,7 @@ func (m *ModelResponse) SetValidity(revalidateSeconds int) error {
 	// expiration date. This ensures the browser will clear the cookies all at
 	// the same time forcing a refresh.
 	for _, v := range m.GetEntries() {
-		v.getCookie().Expires = m.Val.Expires
+		v.getCookie().Expires = m.Ref.Expires
 	}
 
 	return nil
