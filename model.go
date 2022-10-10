@@ -116,36 +116,42 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 			if err != nil {
 				return err
 			}
+			m.RID.GetCookie().Key = "rid"
 		case "email":
 			m.Email = &Email{}
 			err := m.Email.UnmarshalSwift(v)
 			if err != nil {
 				return err
 			}
+			m.Email.GetCookie().Key = "email"
 		case "salt":
 			m.Salt = &Salt{}
 			err := m.Salt.UnmarshalSwift(v)
 			if err != nil {
 				return err
 			}
+			m.Salt.GetCookie().Key = "salt"
 		case "pref":
 			m.Pref = &Preferences{}
 			err := m.Pref.UnmarshalSwift(v)
 			if err != nil {
 				return err
 			}
+			m.Pref.GetCookie().Key = "pref"
 		case "sid":
 			m.SID = &Identifier{}
 			err := m.SID.UnmarshalSwift(v)
 			if err != nil {
 				return err
 			}
+			m.SID.GetCookie().Key = "sid"
 		case "stop":
 			m.Stop = &StringArray{}
 			err := m.Stop.UnmarshalSwift(v)
 			if err != nil {
 				return err
 			}
+			m.Stop.getCookie().Key = "stop"
 		case "state":
 			for _, i := range v.Values() {
 				m.State = append(m.State, string(i))
