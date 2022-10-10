@@ -16,13 +16,13 @@
 
 package swan
 
-// Writeable is the base structure for data that can be changed and persisted
-// including identifiers, email, salt, and preferences.
-type Writeable struct {
-	Base
-	Cookie    *Cookie `json:"cookie,omitempty"` // Cookie data
-	Persisted bool    `json:"persisted"`        // True if the value has been stored.
-}
+// Entry common interface for all entities in the data model.
+type Entry interface {
+	Verifiable
 
-// getCookie returns the cookie instance. Used by the Entry interface.
-func (m *Writeable) getCookie() *Cookie { return m.Cookie }
+	// Returns the cookie representation of the SWAN entity.
+	getCookie() *Cookie
+
+	// Returns the version of the SWAN entity.
+	getVersion() byte
+}

@@ -17,49 +17,38 @@
 package swan
 
 import (
-	"testing"
+	"encoding/json"
+	"net/http"
 
-	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/common-go"
 )
 
-func TestSID(t *testing.T) {
-	s := owid.NewTestDefaultSigner(t)
-
-	// Create the base SID.
-	d := testCreateSID(t, s)
-
-	t.Run("pass", func(t *testing.T) {
-
-		// Verify the SID and check that they pass.
-		verifyOWID(t, s, d, true)
-	})
-	t.Run("same", func(t *testing.T) {
-
-		// Verify that another SID with the same input values results in the
-		// same byte array.
-		n := testCreateSID(t, s)
-		testCompareIdentifier(t, d, n)
-	})
+// Extension to Model with information needed in a request.
+type ModelRequest struct {
+	Model
 }
 
-func testCreateSID(t *testing.T, s *owid.Signer) *Identifier {
-	// Create the new email.
-	e, err := NewEmail(s, "email@example.com")
+// Verify the OWIDs in the model provided and handles any response to the
+// caller. True is returned if the model is valid, otherwise false.
+func (m *ModelRequest) Verify(w http.ResponseWriter, scheme string) bool {
+	err := m.Model.Verify(scheme)
 	if err != nil {
-		t.Fatal(err)
+		common.ReturnApplicationError(w, &common.HttpError{
+			Message: "invalid data",
+			Error:   err,
+			Code:    http.StatusBadRequest})
+		return false
 	}
+	return true
+}
 
-	// Create the new salt with the from string method.
-	a, err := NewSaltFromString(s, "1234")
+// UnmarshalRequest populates the values of the model with those from the
+// http request.
+func (m *ModelRequest) UnmarshalRequest(r *http.Request) error {
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(m)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-
-	// Create the SID.
-	i, err := NewSID(s, e, a)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return i
+	return nil
 }

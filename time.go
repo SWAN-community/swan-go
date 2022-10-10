@@ -16,13 +16,17 @@
 
 package swan
 
-// Writeable is the base structure for data that can be changed and persisted
-// including identifiers, email, salt, and preferences.
-type Writeable struct {
-	Base
-	Cookie    *Cookie `json:"cookie,omitempty"` // Cookie data
-	Persisted bool    `json:"persisted"`        // True if the value has been stored.
+// Time of the last refresh of the SWAN data. Used by the publisher to determine
+// if a refresh of SWAN data is required. The created date is the content of the
+// cookie, and the expiry date which is used by the browser to clear the cookie
+// is when the SWAN data should be refreshed. The presence of this cookie
+// indicates the data can be used.
+type Time struct {
+	Cookie
 }
 
-// getCookie returns the cookie instance. Used by the Entry interface.
-func (m *Writeable) getCookie() *Cookie { return m.Cookie }
+// GetCookie returns the time cookie with the key set.
+func (l *Time) GetCookie() *Cookie {
+	l.Key = "time"
+	return &l.Cookie
+}
