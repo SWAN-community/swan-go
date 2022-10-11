@@ -69,6 +69,8 @@ github.com/SWAN-community/common-go v0.1.4-0.20221006161449-16175aac6d94 h1:aNid
 github.com/SWAN-community/common-go v0.1.4-0.20221006161449-16175aac6d94/go.mod h1:jdF6/j8H4h29+O4OobHE8JS0aWSU9Zx9g5Vuh9qOQng=
 github.com/SWAN-community/common-go v0.1.4-0.20221006162833-67646891d4da h1:BTaaHtYgPGVOF2o4fF9Wm3FqRif75CACxS8RAN0ACjI=
 github.com/SWAN-community/common-go v0.1.4-0.20221006162833-67646891d4da/go.mod h1:jdF6/j8H4h29+O4OobHE8JS0aWSU9Zx9g5Vuh9qOQng=
+github.com/SWAN-community/common-go v0.1.4-0.20221011170842-61d2421c1170 h1:AGs5Lc2vIVQfywwrExbkqbn2EajHqu7IoaLzPiYIFNI=
+github.com/SWAN-community/common-go v0.1.4-0.20221011170842-61d2421c1170/go.mod h1:jdF6/j8H4h29+O4OobHE8JS0aWSU9Zx9g5Vuh9qOQng=
 github.com/SWAN-community/config-go v0.1.5 h1:fJl987+vnTU+tSyiGsa77XlBStnjI1gegKokHv4QCLE=
 github.com/SWAN-community/config-go v0.1.5/go.mod h1:0Vf7gvtQG1dpDFc1GjRJ1ghmZnoLClQ5JVrx57tXWLU=
 github.com/SWAN-community/owid-go v0.1.9-0.20220916151727-6625b31e1bda h1:MGmktS/RXSCSBhmFqZACuczEE2faObb781XGztCEMOo=
