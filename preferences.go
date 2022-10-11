@@ -117,7 +117,7 @@ func (p *Preferences) MarshalBinary() ([]byte, error) {
 }
 
 func (p *Preferences) marshal(b *bytes.Buffer) error {
-	err := common.WriteMarshaller(b, &p.Data)
+	err := common.WriteBool(b, p.Data.UseBrowsingForPersonalization)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,8 @@ func (p *Preferences) marshal(b *bytes.Buffer) error {
 
 func (p *Preferences) UnmarshalBinary(data []byte) error {
 	return p.unmarshalBinary(p, data, func(b *bytes.Buffer) error {
-		err := common.ReadMarshaller(b, &p.Data)
+		var err error
+		p.Data.UseBrowsingForPersonalization, err = common.ReadBool(b)
 		if err != nil {
 			return err
 		}
