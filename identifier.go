@@ -103,10 +103,11 @@ func IdentifierUnmarshalBase64(value []byte) (*Identifier, error) {
 }
 
 func (i *Identifier) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
+	err := validateSwiftPair(p)
+	if err != nil {
+		return err
 	}
-	err := i.UnmarshalBinary(p.Values()[0])
+	err = i.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}

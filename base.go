@@ -24,6 +24,7 @@ import (
 
 	"github.com/SWAN-community/common-go"
 	"github.com/SWAN-community/owid-go"
+	"github.com/SWAN-community/swift-go"
 )
 
 // Base used with any SWAN field.
@@ -132,4 +133,12 @@ func unmarshalBase64(b encoding.BinaryUnmarshaler, s []byte) error {
 		return err
 	}
 	return b.UnmarshalBinary(d)
+}
+
+// validateSwiftPair checks that there is only one entry in the value array.
+func validateSwiftPair(p *swift.Pair) error {
+	if len(p.Values()) != 1 {
+		return fmt.Errorf("%s pair value must have length 1", p.Key())
+	}
+	return nil
 }

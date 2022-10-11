@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -131,6 +132,22 @@ func TestResponse(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Log(string(b))
+	})
+	t.Run("fail", func(t *testing.T) {
+		m := &ModelResponse{}
+		r := &swift.Results{}
+		responseAddPair(r, "rid", [][]byte{s.rid})
+		// Make the preferences bad by skipping the first byte.
+		responseAddPair(r, "pref", [][]byte{s.pref[1:]})
+		responseAddPair(r, "salt", [][]byte{s.salt})
+		responseAddPair(r, "email", [][]byte{s.email})
+		err := m.UnmarshalSwift(r)
+		if err == nil {
+			t.Fatal("should error with bad pref")
+		}
+		if !strings.Contains(err.Error(), "pref") {
+			t.Fatal("error should contain pref as failed key")
+		}
 	})
 }
 

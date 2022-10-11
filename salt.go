@@ -86,10 +86,11 @@ func SaltUnmarshalBase64(value []byte) (*Salt, error) {
 }
 
 func (s *Salt) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
+	err := validateSwiftPair(p)
+	if err != nil {
+		return err
 	}
-	err := s.UnmarshalBinary(p.Values()[0])
+	err = s.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}

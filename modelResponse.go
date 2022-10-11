@@ -17,6 +17,7 @@
 package swan
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/SWAN-community/swift-go"
@@ -35,54 +36,64 @@ func (m *ModelResponse) UnmarshalSwift(r *swift.Results) error {
 	// Set the fields that are also fields in the SWIFT results.
 	m.State = r.State
 
-	// Unpack or copy the SWIFT key value pairs that the model knows about.
+	// Unpack or copy the SWIFT key value pairs that the model knows about and
+	// which have at least one value. Use a scoped variable n as the instance
+	// which will only be used in the model if no errors are found.
 	for _, v := range r.Pairs {
-		switch v.Key() {
-		case "rid":
-			m.RID = &Identifier{}
-			err := m.RID.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.RID.GetCookie().Key = "rid"
-		case "email":
-			m.Email = &Email{}
-			err := m.Email.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.Email.GetCookie().Key = "email"
-		case "salt":
-			m.Salt = &Salt{}
-			err := m.Salt.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.Salt.GetCookie().Key = "salt"
-		case "pref":
-			m.Pref = &Preferences{}
-			err := m.Pref.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.Pref.GetCookie().Key = "pref"
-		case "sid":
-			m.SID = &Identifier{}
-			err := m.SID.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.SID.GetCookie().Key = "sid"
-		case "stop":
-			m.Stop = &StringArray{}
-			err := m.Stop.UnmarshalSwift(v)
-			if err != nil {
-				return err
-			}
-			m.Stop.getCookie().Key = "stop"
-		case "state":
-			for _, i := range v.Values() {
-				m.State = append(m.State, string(i))
+		if len(v.Values()) > 0 {
+			switch v.Key() {
+			case "rid":
+				n := &Identifier{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return fmt.Errorf("rid invalid: %w", err)
+				}
+				m.RID = n
+				m.RID.GetCookie().Key = "rid"
+			case "email":
+				n := &Email{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return fmt.Errorf("email invalid: %w", err)
+				}
+				m.Email = n
+				m.Email.GetCookie().Key = "email"
+			case "salt":
+				n := &Salt{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return fmt.Errorf("salt invalid: %w", err)
+				}
+				m.Salt = n
+				m.Salt.GetCookie().Key = "salt"
+			case "pref":
+				n := &Preferences{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return fmt.Errorf("pref invalid: %w", err)
+				}
+				m.Pref = n
+				m.Pref.GetCookie().Key = "pref"
+			case "sid":
+				n := &Identifier{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return fmt.Errorf("sid invalid: %w", err)
+				}
+				m.SID = n
+				m.SID.GetCookie().Key = "sid"
+			case "stop":
+				n := &StringArray{}
+				err := n.UnmarshalSwift(v)
+				if err != nil {
+					return err
+				}
+				m.Stop = n
+				m.Stop.getCookie().Key = "stop"
+			case "state":
+				for _, i := range v.Values() {
+					m.State = append(m.State, string(i))
+				}
 			}
 		}
 	}

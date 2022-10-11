@@ -81,10 +81,11 @@ func ByteArrayUnmarshalBase64(value []byte) (*ByteArray, error) {
 }
 
 func (a *ByteArray) UnmarshalSwift(p *swift.Pair) error {
-	if len(p.Values()) == 0 {
-		return nil
+	err := validateSwiftPair(p)
+	if err != nil {
+		return err
 	}
-	err := a.UnmarshalBinary(p.Values()[0])
+	err = a.UnmarshalBinary(p.Values()[0])
 	if err != nil {
 		return err
 	}
