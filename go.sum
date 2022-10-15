@@ -89,6 +89,8 @@ github.com/SWAN-community/owid-go v0.1.9-0.20221009195418-315f6fc9bdfb h1:O6NvpP
 github.com/SWAN-community/owid-go v0.1.9-0.20221009195418-315f6fc9bdfb/go.mod h1:W9RX+DenWvSopXclvJdesUynUUgn5efIk9NwpHdgwXs=
 github.com/SWAN-community/owid-go v0.1.9-0.20221011172733-c8e6a3ba6e85 h1:5q5Ybkb3PfTYYy4QCyd3Fpbb55ALuj2op+f637jKVHY=
 github.com/SWAN-community/owid-go v0.1.9-0.20221011172733-c8e6a3ba6e85/go.mod h1:T+dk/21HjHZbR56UePokpm8HNLRT0UgXDCpxXL9gbrs=
+github.com/SWAN-community/owid-go v0.1.9-0.20221015132244-36e4827ac186 h1:u9Oz7+ThBOAEF82NYmPrqSecIQEyGKPraWx0WGOFCHk=
+github.com/SWAN-community/owid-go v0.1.9-0.20221015132244-36e4827ac186/go.mod h1:T+dk/21HjHZbR56UePokpm8HNLRT0UgXDCpxXL9gbrs=
 github.com/SWAN-community/swift-go v0.1.7-0.20220916140926-924d23437419 h1:q/nF7iI1to7tJx/PQJGCrkOj7Rs7c4g8YpQneabk+us=
 github.com/SWAN-community/swift-go v0.1.7-0.20220916140926-924d23437419/go.mod h1:jyd0Ak3oHlWal8/FBy2ftgYjsn86dsQnMnXkgqwQy+g=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
